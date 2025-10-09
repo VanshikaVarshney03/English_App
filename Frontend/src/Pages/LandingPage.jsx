@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 export default function LandingPage() {
   const texts = ["Speak Better.", "Write Smarter.", "Grow Confident."];
@@ -51,15 +52,27 @@ export default function LandingPage() {
       
         <h1 className={`text-xl sm:text-2xl font-bold ${darkMode ? 'text-[#60a5fa]' : 'text-[#1976d2]'} animate-fadeIn`}>PrepTalk</h1>
         <div className="flex items-center gap-2 sm:gap-3">
+          <Link to="/signup">
           <button className={`${darkMode ? 'text-[#60a5fa] hover:text-[#3b82f6] border-[#60a5fa] hover:bg-[#1e293b]' : 'text-[#1565c0] hover:text-[#0d47a1] border-[#1976d2] hover:bg-[#e3f2fd]'} border-2 px-3 sm:px-5 py-1.5 sm:py-2 rounded-full transition-all duration-300 hover:scale-110 font-medium text-sm sm:text-base`}>
             Sign Up
           </button>
+          
+          </Link>
+          <Link to="/login">
           <button className={`${darkMode ? 'text-[#60a5fa] hover:text-[#3b82f6] border-[#60a5fa] hover:bg-[#1e293b]' : 'text-[#1565c0] hover:text-[#0d47a1] border-[#1976d2] hover:bg-[#e3f2fd]'} border-2 px-3 sm:px-5 py-1.5 sm:py-2 rounded-full transition-all duration-300 hover:scale-110 font-medium text-sm sm:text-base`}>
             Login
           </button>
-          <button className={`hidden sm:block ${darkMode ? 'text-[#60a5fa] hover:text-[#3b82f6] border-[#60a5fa] hover:bg-[#1e293b]' : 'text-[#1565c0] hover:text-[#0d47a1] border-[#1976d2] hover:bg-[#e3f2fd]'} border-2 px-3 sm:px-5 py-1.5 sm:py-2 rounded-full transition-all duration-300 hover:scale-110 font-medium text-sm sm:text-base`}>
+          
+          
+          </Link>
+          <Link to="/contact">
+           <button className={`hidden sm:block ${darkMode ? 'text-[#60a5fa] hover:text-[#3b82f6] border-[#60a5fa] hover:bg-[#1e293b]' : 'text-[#1565c0] hover:text-[#0d47a1] border-[#1976d2] hover:bg-[#e3f2fd]'} border-2 px-3 sm:px-5 py-1.5 sm:py-2 rounded-full transition-all duration-300 hover:scale-110 font-medium text-sm sm:text-base`}>
             Contact Us
           </button>
+          
+          
+          </Link>
+         
           {/* Dark Mode Toggle */}
           <button 
             onClick={() => setDarkMode(!darkMode)}
@@ -136,39 +149,41 @@ export default function LandingPage() {
       </section>
 
       {/* Core Features */}
-      <section id="features" className={`py-16 sm:py-20 md:py-24 px-4 sm:px-6 md:px-20 ${darkMode ? 'bg-gradient-to-br from-[#0f1729] to-[#1a1f3a]' : 'bg-gradient-to-br from-[#e8f4fd] to-[#d1e9f6]'} transition-colors duration-500`}>
-        <div className="text-center mb-10 sm:mb-12">
-          <span className={`${darkMode ? 'bg-[#3b82f6] text-white' : 'bg-[#1976d2] text-white'} px-4 sm:px-5 py-2 rounded-full text-xs font-semibold mb-4 inline-block animate-fadeIn`}>
-            COMPREHENSIVE FEATURES
-          </span>
-          <h2 className={`text-2xl sm:text-3xl md:text-4xl ${darkMode ? 'text-[#60a5fa]' : 'text-[#1976d2]'} font-bold mb-4 animate-fadeIn animation-delay-200 px-4`}>
-            Complete Learning System
-          </h2>
-          <p className={`text-center ${darkMode ? 'text-[#94a3b8]' : 'text-[#1565c0]'} text-sm sm:text-base mb-4 max-w-3xl mx-auto animate-fadeIn animation-delay-400 px-4`}>
-            From beginner to advanced — master English with structured lessons, real-time feedback, and interactive practice
-          </p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-7xl mx-auto">
-          {[
-            { icon: "📚", title: "Level-Based Learning Paths", desc: "Progress from A1 to C1 with structured courses designed for your level" },
-            { icon: "✍️", title: "Grammar Lessons", desc: "Interactive lessons with examples, quizzes, and instant feedback" },
-            { icon: "📖", title: "Vocabulary Builder", desc: "Daily words with pronunciation, meaning, and real-world usage examples" },
-            { icon: "🎤", title: "Pronunciation Practice", desc: "AI-powered speech recognition checks your accent accuracy instantly" },
-            { icon: "🎧", title: "Listening Practice", desc: "Audio clips, podcasts, and dialogues with comprehension questions" },
-            { icon: "📝", title: "Reading & Comprehension", desc: "Short passages with MCQs to improve understanding and speed" },
-            { icon: "💬", title: "Writing Practice", desc: "Daily writing tasks with AI grammar correction and suggestions" }
-          ].map((feature, idx) => (
-            <div
-              key={idx}
-              className={`reveal-card ${darkMode ? 'bg-[#1e293b]/95 border-[#374151]' : 'bg-white/95 border-[#90caf9]'} backdrop-blur-sm p-6 sm:p-7 rounded-2xl sm:rounded-3xl shadow-xl border-2 opacity-0 translate-y-8 transition-all duration-700 hover:shadow-[0_16px_40px_rgba(25,118,210,0.3)] hover:-translate-y-4 ${darkMode ? 'hover:border-[#60a5fa]' : 'hover:border-[#1976d2]'} hover:scale-105 sm:hover:scale-110 hover:rotate-1 sm:hover:rotate-2 group`}
-            >
-              <div className="text-3xl sm:text-4xl mb-3 group-hover:scale-125 transition-transform duration-300">{feature.icon}</div>
-              <h3 className={`text-base sm:text-lg font-bold mb-2 ${darkMode ? 'text-[#e0e7ff]' : 'text-[#0d47a1]'}`}>{feature.title}</h3>
-              <p className={`${darkMode ? 'text-[#94a3b8]' : 'text-[#1565c0]'} text-xs sm:text-sm leading-relaxed`}>{feature.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+<section id="features" className={`py-16 sm:py-20 md:py-24 px-4 sm:px-6 md:px-20 ${darkMode ? 'bg-gradient-to-br from-[#0f1729] to-[#1a1f3a]' : 'bg-gradient-to-br from-[#e8f4fd] to-[#d1e9f6]'} transition-colors duration-500`}>
+  <div className="text-center mb-10 sm:mb-12">
+    <span className={`${darkMode ? 'bg-[#3b82f6] text-white' : 'bg-[#1976d2] text-white'} px-4 sm:px-5 py-2 rounded-full text-xs font-semibold mb-4 inline-block animate-fadeIn`}>
+      COMPREHENSIVE FEATURES
+    </span>
+    <h2 className={`text-2xl sm:text-3xl md:text-4xl ${darkMode ? 'text-[#60a5fa]' : 'text-[#1976d2]'} font-bold mb-4 animate-fadeIn animation-delay-200 px-4`}>
+      Complete Learning System
+    </h2>
+    <p className={`text-center ${darkMode ? 'text-[#94a3b8]' : 'text-[#1565c0]'} text-sm sm:text-base mb-4 max-w-3xl mx-auto animate-fadeIn animation-delay-400 px-4`}>
+      From beginner to advanced — master English with structured lessons, real-time feedback, and interactive practice
+    </p>
+  </div>
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 max-w-7xl mx-auto">
+    {[
+      { icon: "📚", title: "Level-Based Learning Paths", desc: "Progress from A1 to C1 with structured courses designed for your level" },
+      { icon: "✍️", title: "Grammar Lessons", desc: "Interactive lessons with examples, quizzes, and instant feedback" },
+      { icon: "📖", title: "Vocabulary Builder", desc: "Daily words with pronunciation, meaning, and real-world usage examples" },
+      { icon: "🎤", title: "Pronunciation Practice", desc: "AI-powered speech recognition checks your accent accuracy instantly" },
+      { icon: "🎧", title: "Listening Practice", desc: "Audio clips, podcasts, and dialogues with comprehension questions" },
+      { icon: "📝", title: "Reading & Comprehension", desc: "Short passages with MCQs to improve understanding and speed" },
+      { icon: "💬", title: "Writing Practice", desc: "Daily writing tasks with AI grammar correction and suggestions" },
+      { icon: "🎯", title: "Group Discussion", desc: "Practice Interview English, Travel English, or Business scenarios" }
+    ].map((feature, idx) => (
+      <div
+        key={idx}
+        className={`reveal-card ${darkMode ? 'bg-[#1e293b]/95 border-[#374151]' : 'bg-white/95 border-[#90caf9]'} backdrop-blur-sm p-6 sm:p-7 rounded-2xl sm:rounded-3xl shadow-xl border-2 opacity-0 translate-y-8 transition-all duration-700 hover:shadow-[0_16px_40px_rgba(25,118,210,0.3)] hover:-translate-y-4 ${darkMode ? 'hover:border-[#60a5fa]' : 'hover:border-[#1976d2]'} hover:scale-105 sm:hover:scale-110 hover:rotate-1 sm:hover:rotate-2 group`}
+      >
+        <div className="text-3xl sm:text-4xl mb-3 group-hover:scale-125 transition-transform duration-300">{feature.icon}</div>
+        <h3 className={`text-base sm:text-lg font-bold mb-2 ${darkMode ? 'text-[#e0e7ff]' : 'text-[#0d47a1]'}`}>{feature.title}</h3>
+        <p className={`${darkMode ? 'text-[#94a3b8]' : 'text-[#1565c0]'} text-xs sm:text-sm leading-relaxed`}>{feature.desc}</p>
+      </div>
+    ))}
+  </div>
+</section>
+
 
       {/* Gamification */}
 <section id="gamification" className={`py-16 sm:py-20 md:py-24 px-4 sm:px-6 md:px-20 ${darkMode ? 'bg-gradient-to-br from-[#1a1f3a] via-[#0f1729] to-[#0a0e27]' : 'bg-gradient-to-br from-[#e1f5fe] via-[#b3e5fc] to-[#81d4fa]'} relative overflow-hidden transition-colors duration-500`}>
@@ -274,7 +289,7 @@ export default function LandingPage() {
               { icon: "🤖", title: "AI Conversation Partner", desc: "Chat with your AI tutor anytime — practice real conversations" },
               { icon: "✨", title: "Real-time Grammar Fix", desc: "AI detects and explains mistakes as you type or speak" },
               { icon: "🌍", title: "Native Language Support", desc: "Learn in Hindi, Tamil, or your language for better understanding" },
-              { icon: "🎯", title: "Topic-Based Rooms", desc: "Practice Interview English, Travel English, or Business scenarios" }
+              { icon: "🎯", title: "Group Discussion", desc: "Practice Interview English, Travel English, or Business scenarios" }
             ].map((feature, idx) => (
               <div
                 key={idx}
