@@ -1,30 +1,30 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-export default function LoginPage() {
+export default function SignupPage() {
   const [rollNo, setRollNo] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [darkMode, setDarkMode] = useState(false);
-  const navigate = useNavigate();  // ✅ Added for navigation
+  const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Email validation
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      setError("Please enter a valid email address.");
+    // Roll number validation (only digits)
+    if (!/^\d+$/.test(rollNo)) {
+      setError("Roll number must contain digits only.");
       return;
     }
 
-    // Password validation (same as signup)
+    // Password validation (uppercase, number, special char, min 8 chars)
     const passwordRegex =
       /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]).{8,}$/;
 
     if (!passwordRegex.test(password)) {
       setError(
-        "Password must have at least 8 characters, 1 uppercase letter, 1 number, and 1 special character."
+        "Password must be at least 8 characters long, include one uppercase letter, one number, and one special character."
       );
       return;
     }
@@ -33,13 +33,13 @@ export default function LoginPage() {
     
     // ✅ Save user data to localStorage
     localStorage.setItem('user', JSON.stringify({
-      rollNo: rollNo || "Guest",
+      rollNo: rollNo,
       email: email
     }));
     
     console.log({ rollNo, email, password });
     
-    // ✅ Redirect to dashboard after successful login
+    // ✅ Redirect to dashboard after successful signup
     navigate("/dashboard");
   };
 
@@ -51,7 +51,7 @@ export default function LoginPage() {
           : "bg-gradient-to-br from-[#e3f2fd] to-[#bbdefb] text-[#0d47a1]"
       }`}
     >
-      {/* Navbar */}
+      {/* Header */}
       <header
         className={`fixed top-0 w-full backdrop-blur-lg px-8 md:px-16 py-4 flex justify-between items-center z-50 border-b transition-all duration-500 ${
           darkMode
@@ -63,25 +63,25 @@ export default function LoginPage() {
           className={`text-2xl font-bold cursor-pointer ${
             darkMode ? "text-[#60a5fa]" : "text-[#1976d2]"
           }`}
-          onClick={() => navigate('/')}  // ✅ Added click handler
+          onClick={() => navigate('/')}
         >
           PrepTalk
         </h1>
 
         <div className="flex items-center gap-3">
-          {/* Signup Button */}
+          {/* Login Button */}
           <button
-            onClick={() => navigate('/signup')}  // ✅ Changed to navigate
+            onClick={() => navigate("/login")}
             className={`${
               darkMode
                 ? "text-[#60a5fa] border-[#60a5fa] hover:bg-[#1e293b]"
                 : "text-[#1565c0] border-[#1976d2] hover:bg-[#e3f2fd]"
             } border-2 px-5 py-2 rounded-full transition-all duration-300 font-medium`}
           >
-            Signup
+            Login
           </button>
 
-          {/* Contact Button */}
+          {/* Contact Us Button */}
           <button
             className={`${
               darkMode
@@ -107,7 +107,7 @@ export default function LoginPage() {
         </div>
       </header>
 
-      {/* Login Form */}
+      {/* Signup Form Section */}
       <section className="flex flex-col justify-center items-center min-h-screen px-4 md:px-20 pt-32">
         <div
           className={`backdrop-blur-sm p-10 rounded-3xl shadow-lg max-w-md w-full transition-all duration-500 ${
@@ -119,11 +119,10 @@ export default function LoginPage() {
               darkMode ? "text-[#60a5fa]" : "text-[#0d47a1]"
             }`}
           >
-            Login
+            Sign Up
           </h2>
-
           <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
-            {/* Optional Roll Number */}
+            {/* Roll No */}
             <div>
               <label
                 className={`block font-medium mb-1 ${
@@ -131,7 +130,7 @@ export default function LoginPage() {
                 }`}
                 htmlFor="rollNo"
               >
-                University Roll No (Optional)
+                University Roll No
               </label>
               <input
                 id="rollNo"
@@ -141,16 +140,17 @@ export default function LoginPage() {
                   const val = e.target.value;
                   if (/^\d*$/.test(val)) setRollNo(val);
                 }}
-                placeholder="Enter roll number (optional)"
+                placeholder="Enter your roll number"
                 className={`w-full rounded-xl px-4 py-2 focus:outline-none focus:ring-2 transition-all duration-300 ${
                   darkMode
                     ? "bg-[#0d1117] border border-[#30363d] focus:ring-[#60a5fa] text-white"
                     : "border border-[#90caf9] focus:ring-[#1976d2] text-[#0d47a1]"
                 }`}
+                required
               />
             </div>
 
-            {/* Email Field */}
+            {/* Email */}
             <div>
               <label
                 className={`block font-medium mb-1 ${
@@ -165,7 +165,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
+                placeholder="Enter your university email"
                 className={`w-full rounded-xl px-4 py-2 focus:outline-none focus:ring-2 transition-all duration-300 ${
                   darkMode
                     ? "bg-[#0d1117] border border-[#30363d] focus:ring-[#60a5fa] text-white"
@@ -175,7 +175,7 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Password Field */}
+            {/* Password */}
             <div>
               <label
                 className={`block font-medium mb-1 ${
@@ -203,12 +203,12 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {/* Error Message */}
+            {/* Error */}
             {error && (
               <p className="text-red-500 text-sm text-center -mt-2">{error}</p>
             )}
 
-            {/* Login Button */}
+            {/* Submit */}
             <button
               type="submit"
               className={`px-6 py-3 rounded-full text-lg font-semibold shadow-lg transition-all duration-500 hover:shadow-xl hover:-translate-y-1 hover:scale-105 ${
@@ -217,23 +217,23 @@ export default function LoginPage() {
                   : "bg-gradient-to-r from-[#1976d2] to-[#1565c0] text-white hover:from-[#1565c0] hover:to-[#0d47a1]"
               }`}
             >
-              Login
+              Sign Up
             </button>
 
-            {/* Signup Redirect */}
+            {/* Login Link */}
             <p
               className={`text-center mt-2 text-sm ${
                 darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"
               }`}
             >
-              Not registered yet?{" "}
+              Already registered?{" "}
               <Link
-                to="/signup"
+                to="/login"
                 className={`font-semibold hover:underline ${
                   darkMode ? "text-[#60a5fa]" : "text-[#1976d2]"
                 }`}
               >
-                Sign up here
+                Login here
               </Link>
             </p>
           </form>
