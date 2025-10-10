@@ -1,232 +1,65 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export default function QuestsAndMissions() {
+export default function Leaderboards() {
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(false);
-  const [completedMissions, setCompletedMissions] = useState([]);
-  const [selectedMission, setSelectedMission] = useState(null);
-  const [userAnswer, setUserAnswer] = useState('');
-  const [todaysMission, setTodaysMission] = useState(null);
+  const [selectedTab, setSelectedTab] = useState('global'); // global, friends, country
+  const [timeFilter, setTimeFilter] = useState('allTime'); // allTime, thisWeek, today
 
-  // All Available Missions
-  const allMissions = [
-    {
-      id: 1,
-      title: "Word Master Challenge",
-      description: "Find synonyms and antonyms",
-      type: "vocabulary",
-      difficulty: "Easy",
-      xp: 50,
-      icon: "📚",
-      word: "Happy",
-      task: "Provide 3 synonyms and 3 antonyms for the word 'Happy'",
-      example: "Synonyms: Joyful, Cheerful, Delighted\nAntonyms: Sad, Unhappy, Miserable"
-    },
-    {
-      id: 2,
-      title: "Reading Comprehension",
-      description: "Read and answer questions",
-      type: "reading",
-      difficulty: "Medium",
-      xp: 100,
-      icon: "📖",
-      passage: "Climate change is one of the most pressing issues of our time. Rising global temperatures are causing glaciers to melt, sea levels to rise, and weather patterns to become more extreme. Scientists agree that human activities, particularly the burning of fossil fuels, are the primary cause. Immediate action is needed to reduce carbon emissions and protect our planet for future generations.",
-      questions: [
-        "What is the main cause of climate change according to the passage?",
-        "What are two effects of rising global temperatures mentioned?",
-        "Why is immediate action necessary?"
-      ]
-    },
-    {
-      id: 3,
-      title: "One Minute Speech",
-      description: "Speak on any topic for 60 seconds",
-      type: "speaking",
-      difficulty: "Medium",
-      xp: 75,
-      icon: "🎤",
-      topics: [
-        "My Favorite Hobby",
-        "The Importance of Education",
-        "Technology in Daily Life",
-        "My Dream Vacation",
-        "A Book That Changed My Life"
-      ],
-      task: "Choose a topic and speak for one minute without stopping"
-    },
-    {
-      id: 4,
-      title: "Grammar Quiz Master",
-      description: "Answer 5 grammar questions correctly",
-      type: "grammar",
-      difficulty: "Easy",
-      xp: 60,
-      icon: "✍️",
-      questions: [
-        {
-          question: "Choose the correct form: She ___ to the market yesterday.",
-          options: ["go", "goes", "went", "going"],
-          correct: "went"
-        },
-        {
-          question: "Identify the verb: The cat sleeps on the mat.",
-          options: ["cat", "sleeps", "mat", "the"],
-          correct: "sleeps"
-        },
-        {
-          question: "Which is a proper noun?",
-          options: ["city", "London", "book", "happy"],
-          correct: "London"
-        }
-      ]
-    },
-    {
-      id: 5,
-      title: "Daily Idiom Challenge",
-      description: "Learn and use an idiom in a sentence",
-      type: "vocabulary",
-      difficulty: "Medium",
-      xp: 80,
-      icon: "💡",
-      idiom: "Break the ice",
-      meaning: "To initiate conversation in a social setting; to make people feel more comfortable",
-      task: "Create a sentence using the idiom 'Break the ice'"
-    },
-    {
-      id: 6,
-      title: "Pronunciation Practice",
-      description: "Record yourself saying 10 difficult words",
-      type: "pronunciation",
-      difficulty: "Hard",
-      xp: 120,
-      icon: "🗣️",
-      words: [
-        "Massachusetts",
-        "Entrepreneurship",
-        "Worcestershire",
-        "Otorhinolaryngologist",
-        "Specifically",
-        "February",
-        "Library",
-        "Comfortable",
-        "Vegetable",
-        "Chocolate"
-      ],
-      task: "Pronounce each word clearly and correctly"
-    },
-    {
-      id: 7,
-      title: "Sentence Building",
-      description: "Create sentences using given words",
-      type: "writing",
-      difficulty: "Easy",
-      xp: 50,
-      icon: "📝",
-      words: ["Adventure", "Technology", "Inspire", "Challenge", "Success"],
-      task: "Create meaningful sentences using each word"
-    },
-    {
-      id: 8,
-      title: "Antonym Master",
-      description: "Find opposite words",
-      type: "vocabulary",
-      difficulty: "Easy",
-      xp: 50,
-      icon: "🔄",
-      word: "Beautiful",
-      task: "Provide 5 antonyms for the word 'Beautiful'",
-      example: "Examples: Ugly, Unattractive, Hideous, Plain, Dull"
-    },
-    {
-      id: 9,
-      title: "Story Completion",
-      description: "Complete the story in 5 sentences",
-      type: "writing",
-      difficulty: "Medium",
-      xp: 90,
-      icon: "📚",
-      story: "It was a dark and stormy night. Sarah heard a strange noise coming from the attic...",
-      task: "Complete this story in exactly 5 sentences"
-    },
-    {
-      id: 10,
-      title: "Describe It Challenge",
-      description: "Describe an object without naming it",
-      type: "speaking",
-      difficulty: "Easy",
-      xp: 60,
-      icon: "🎯",
-      objects: ["Mobile Phone", "Laptop", "Coffee", "Book", "Car"],
-      task: "Choose an object and describe it in 3-4 sentences without saying its name"
-    }
+  // Mock user data (Backend se aayega)
+  const currentUser = {
+    id: 'user123',
+    name: 'You',
+    avatar: '😊',
+    xp: 2450,
+    rank: 47,
+    streak: 12,
+    missionsCompleted: 35,
+    country: 'India'
+  };
+
+  // Mock leaderboard data
+  const globalLeaderboard = [
+    { id: 1, name: 'Rahul Sharma', avatar: '🏆', xp: 8520, streak: 45, missionsCompleted: 120, country: 'India', badge: '👑' },
+    { id: 2, name: 'Priya Patel', avatar: '🎯', xp: 7890, streak: 38, missionsCompleted: 105, country: 'India', badge: '🥈' },
+    { id: 3, name: 'Amit Kumar', avatar: '🚀', xp: 7340, streak: 42, missionsCompleted: 98, country: 'India', badge: '🥉' },
+    { id: 4, name: 'Sarah Johnson', avatar: '⭐', xp: 6850, streak: 35, missionsCompleted: 92, country: 'USA' },
+    { id: 5, name: 'Mohammed Ali', avatar: '🎪', xp: 6420, streak: 30, missionsCompleted: 88, country: 'UAE' },
+    { id: 6, name: 'Emily Chen', avatar: '🌟', xp: 6100, streak: 28, missionsCompleted: 85, country: 'China' },
+    { id: 7, name: 'Carlos Rodriguez', avatar: '🎨', xp: 5890, streak: 26, missionsCompleted: 82, country: 'Spain' },
+    { id: 8, name: 'Aisha Khan', avatar: '💫', xp: 5670, streak: 25, missionsCompleted: 79, country: 'Pakistan' },
+    { id: 9, name: 'David Kim', avatar: '🎭', xp: 5450, streak: 23, missionsCompleted: 76, country: 'Korea' },
+    { id: 10, name: 'Lisa Anderson', avatar: '🌈', xp: 5230, streak: 22, missionsCompleted: 73, country: 'Australia' },
+    { id: 11, name: 'Raj Malhotra', avatar: '🎬', xp: 5010, streak: 20, missionsCompleted: 70, country: 'India' },
+    { id: 12, name: 'Nina Gupta', avatar: '🎵', xp: 4890, streak: 19, missionsCompleted: 68, country: 'India' },
+    { id: 13, name: 'James Wilson', avatar: '🎸', xp: 4670, streak: 18, missionsCompleted: 65, country: 'UK' },
+    { id: 14, name: 'Maria Garcia', avatar: '🎹', xp: 4450, streak: 17, missionsCompleted: 62, country: 'Mexico' },
+    { id: 15, name: 'Ahmed Hassan', avatar: '🎺', xp: 4230, streak: 16, missionsCompleted: 59, country: 'Egypt' },
+    // Add more users...
+    { id: 45, name: 'Alex Brown', avatar: '🎤', xp: 2550, streak: 13, missionsCompleted: 37, country: 'Canada' },
+    { id: 46, name: 'Sophie Martin', avatar: '🎧', xp: 2480, streak: 12, missionsCompleted: 36, country: 'France' },
+    { id: 47, name: 'You', avatar: '😊', xp: 2450, streak: 12, missionsCompleted: 35, country: 'India', isCurrentUser: true },
+    { id: 48, name: 'Tom Harris', avatar: '🎮', xp: 2420, streak: 11, missionsCompleted: 34, country: 'Ireland' },
+    { id: 49, name: 'Anna Lee', avatar: '🎲', xp: 2390, streak: 11, missionsCompleted: 33, country: 'Singapore' },
+    { id: 50, name: 'Chris Evans', avatar: '🎳', xp: 2360, streak: 10, missionsCompleted: 32, country: 'New Zealand' }
   ];
 
-  // Get Today's Mission
-  useEffect(() => {
-    const today = new Date().toDateString();
-    const savedDate = localStorage.getItem('missionDate');
-    const savedMissionId = localStorage.getItem('todayMissionId');
-
-    if (savedDate === today && savedMissionId) {
-      const mission = allMissions.find(m => m.id === parseInt(savedMissionId));
-      setTodaysMission(mission);
-    } else {
-      const randomMission = allMissions[Math.floor(Math.random() * allMissions.length)];
-      setTodaysMission(randomMission);
-      
-      localStorage.setItem('missionDate', today);
-      localStorage.setItem('todayMissionId', randomMission.id.toString());
-    }
-
-    const completed = localStorage.getItem('missionCompleted');
-    if (completed === today) {
-      setCompletedMissions([parseInt(savedMissionId)]);
-    } else {
-      setCompletedMissions([]);
-    }
-  }, []);
-
-  const handleMissionClick = (mission) => {
-    setSelectedMission(mission);
-    setUserAnswer('');
+  const getRankBadge = (rank) => {
+    if (rank === 1) return '👑';
+    if (rank === 2) return '🥈';
+    if (rank === 3) return '🥉';
+    if (rank <= 10) return '🏅';
+    if (rank <= 50) return '⭐';
+    return '🎯';
   };
 
-  const handleCompleteMission = (missionId) => {
-    if (!completedMissions.includes(missionId)) {
-      setCompletedMissions([...completedMissions, missionId]);
-      
-      const today = new Date().toDateString();
-      localStorage.setItem('missionCompleted', today);
-      
-      alert('🎉 Mission Completed! +' + selectedMission.xp + ' XP');
-      setSelectedMission(null);
-    }
+  const getRankColor = (rank) => {
+    if (rank === 1) return 'text-yellow-400';
+    if (rank === 2) return 'text-gray-400';
+    if (rank === 3) return 'text-orange-400';
+    return darkMode ? 'text-[#93c5fd]' : 'text-[#1565c0]';
   };
-
-  const getDifficultyColor = (difficulty) => {
-    switch (difficulty) {
-      case 'Easy':
-        return 'bg-green-500';
-      case 'Medium':
-        return 'bg-yellow-500';
-      case 'Hard':
-        return 'bg-red-500';
-      default:
-        return 'bg-gray-500';
-    }
-  };
-
-  if (!todaysMission) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#e3f2fd] to-[#bbdefb]">
-        <div className="text-center">
-          <div className="text-6xl mb-4 animate-spin">⏳</div>
-          <p className="text-xl text-[#1976d2]">Loading today's mission...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className={`min-h-screen ${darkMode ? 'bg-gradient-to-br from-[#0a0e27] to-[#1a1d3a]' : 'bg-gradient-to-br from-[#e3f2fd] to-[#bbdefb]'} transition-all duration-500`}>
@@ -257,203 +90,215 @@ export default function QuestsAndMissions() {
       </header>
 
       {/* Main Content */}
-      <div className="max-w-5xl mx-auto px-4 py-12">
+      <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Hero Section */}
         <div className="text-center mb-12">
-          <div className="text-8xl mb-6 animate-bounce">🎯</div>
+          <div className="text-8xl mb-6 animate-bounce">🏆</div>
           <h2 className={`text-5xl sm:text-6xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-[#0d47a1]'}`}>
-            Daily Quest
+            Leaderboards
           </h2>
           <p className={`text-xl ${darkMode ? 'text-[#93c5fd]' : 'text-[#1565c0]'}`}>
-            Complete today's mission to earn XP and build your streak!
+            Compete with learners worldwide and climb the ranks!
           </p>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
-          <div className={`rounded-2xl p-8 text-center ${darkMode ? 'bg-[#161b22]' : 'bg-white'} shadow-xl hover:scale-105 transition`}>
-            <div className="text-5xl mb-3">⭐</div>
-            <div className={`text-4xl font-bold mb-2 ${darkMode ? 'text-[#60a5fa]' : 'text-[#1976d2]'}`}>
-              {completedMissions.length * todaysMission.xp} XP
+        {/* Your Rank Card */}
+        <div className={`rounded-3xl p-8 mb-8 ${
+          darkMode ? 'bg-gradient-to-r from-[#1e3a8a] to-[#1e40af]' : 'bg-gradient-to-r from-[#1976d2] to-[#1565c0]'
+        } text-white shadow-2xl`}>
+          <div className="flex items-center justify-between flex-wrap gap-6">
+            <div className="flex items-center gap-6">
+              <div className="text-7xl">{currentUser.avatar}</div>
+              <div>
+                <h3 className="text-3xl font-bold mb-2">{currentUser.name}</h3>
+                <div className="flex items-center gap-4 flex-wrap">
+                  <span className="text-lg">🏅 Rank #{currentUser.rank}</span>
+                  <span className="text-lg">⭐ {currentUser.xp} XP</span>
+                  <span className="text-lg">🔥 {currentUser.streak} Day Streak</span>
+                </div>
+              </div>
             </div>
-            <div className={`text-sm ${darkMode ? 'text-[#93c5fd]' : 'text-[#1565c0]'}`}>
-              Today's Earned XP
-            </div>
-          </div>
-
-          <div className={`rounded-2xl p-8 text-center ${darkMode ? 'bg-[#161b22]' : 'bg-white'} shadow-xl hover:scale-105 transition`}>
-            <div className="text-5xl mb-3">
-              {completedMissions.length > 0 ? '✅' : '⏳'}
-            </div>
-            <div className={`text-4xl font-bold mb-2 ${darkMode ? 'text-[#60a5fa]' : 'text-[#1976d2]'}`}>
-              {completedMissions.length > 0 ? 'Done' : 'Pending'}
-            </div>
-            <div className={`text-sm ${darkMode ? 'text-[#93c5fd]' : 'text-[#1565c0]'}`}>
-              Mission Status
-            </div>
-          </div>
-
-          <div className={`rounded-2xl p-8 text-center ${darkMode ? 'bg-[#161b22]' : 'bg-white'} shadow-xl hover:scale-105 transition`}>
-            <div className="text-5xl mb-3">🔥</div>
-            <div className={`text-4xl font-bold mb-2 ${darkMode ? 'text-[#60a5fa]' : 'text-[#1976d2]'}`}>
-              3 Days
-            </div>
-            <div className={`text-sm ${darkMode ? 'text-[#93c5fd]' : 'text-[#1565c0]'}`}>
-              Current Streak
+            <div className="text-center">
+              <div className="text-6xl mb-2">{getRankBadge(currentUser.rank)}</div>
+              <div className="text-sm opacity-80">Your Badge</div>
             </div>
           </div>
         </div>
 
-        {/* Today's Mission Card */}
-        <div className="mb-12">
-          <div className="flex items-center justify-center gap-3 mb-8">
-            <div className={`h-1 w-20 rounded ${darkMode ? 'bg-[#60a5fa]' : 'bg-[#1976d2]'}`}></div>
-            <h3 className={`text-3xl font-bold ${darkMode ? 'text-[#60a5fa]' : 'text-[#1976d2]'}`}>
-              📅 {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-            </h3>
-            <div className={`h-1 w-20 rounded ${darkMode ? 'bg-[#60a5fa]' : 'bg-[#1976d2]'}`}></div>
-          </div>
-          
-          <div
-            onClick={() => !completedMissions.includes(todaysMission.id) && handleMissionClick(todaysMission)}
-            className={`rounded-3xl p-10 transition-all duration-300 ${
-              completedMissions.includes(todaysMission.id)
-                ? darkMode ? 'bg-green-900/30 border-2 border-green-500' : 'bg-green-100 border-2 border-green-500'
-                : `cursor-pointer hover:scale-105 hover:shadow-2xl ${darkMode ? 'bg-[#161b22] hover:bg-[#1e293b]' : 'bg-white hover:bg-blue-50'}`
-            } ${darkMode ? 'border-[#30363d]' : 'border-gray-200'} border-2 shadow-xl`}
-          >
-            <div className="flex justify-between items-start mb-6">
-              <div className="text-7xl">{todaysMission.icon}</div>
-              {completedMissions.includes(todaysMission.id) && (
-                <div className="bg-green-500 text-white px-6 py-3 rounded-full text-lg font-bold flex items-center gap-2">
-                  ✓ Completed Today
-                </div>
-              )}
-            </div>
-            
-            <h4 className={`text-3xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-[#0d47a1]'}`}>
-              {todaysMission.title}
-            </h4>
-            <p className={`text-lg mb-6 ${darkMode ? 'text-[#93c5fd]' : 'text-[#1565c0]'}`}>
-              {todaysMission.description}
-            </p>
+        {/* Tabs */}
+        <div className="flex gap-4 mb-8 flex-wrap justify-center">
+          {[
+            { id: 'global', label: 'Global', icon: '🌍' },
+            { id: 'country', label: 'India', icon: '🇮🇳' },
+            { id: 'friends', label: 'Friends', icon: '👥' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setSelectedTab(tab.id)}
+              className={`px-6 py-3 rounded-xl font-bold text-lg transition-all ${
+                selectedTab === tab.id
+                  ? darkMode ? 'bg-[#60a5fa] text-white' : 'bg-[#1976d2] text-white'
+                  : darkMode ? 'bg-[#161b22] text-[#93c5fd] hover:bg-[#1e293b]' : 'bg-white text-[#1565c0] hover:bg-blue-50'
+              } shadow-lg hover:scale-105`}
+            >
+              {tab.icon} {tab.label}
+            </button>
+          ))}
+        </div>
 
-            <div className="flex justify-between items-center flex-wrap gap-4">
-              <span className={`px-5 py-2 rounded-full text-base font-bold ${getDifficultyColor(todaysMission.difficulty)} text-white`}>
-                {todaysMission.difficulty} Level
-              </span>
-              <span className={`text-2xl font-bold ${darkMode ? 'text-[#60a5fa]' : 'text-[#1976d2]'}`}>
-                Reward: +{todaysMission.xp} XP
-              </span>
-            </div>
+        {/* Time Filter */}
+        <div className="flex gap-4 mb-8 justify-center flex-wrap">
+          {[
+            { id: 'allTime', label: 'All Time' },
+            { id: 'thisWeek', label: 'This Week' },
+            { id: 'today', label: 'Today' }
+          ].map(filter => (
+            <button
+              key={filter.id}
+              onClick={() => setTimeFilter(filter.id)}
+              className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${
+                timeFilter === filter.id
+                  ? darkMode ? 'bg-[#1e293b] text-white border-2 border-[#60a5fa]' : 'bg-blue-100 text-[#1976d2] border-2 border-[#1976d2]'
+                  : darkMode ? 'bg-[#161b22] text-[#93c5fd]' : 'bg-white text-[#1565c0]'
+              }`}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
 
-            {!completedMissions.includes(todaysMission.id) && (
-              <div className="mt-8 text-center">
-                <button className={`px-10 py-4 rounded-xl font-bold text-xl ${
-                  darkMode ? 'bg-gradient-to-r from-[#60a5fa] to-[#3b82f6] hover:from-[#3b82f6] hover:to-[#2563eb]' : 'bg-gradient-to-r from-[#1976d2] to-[#1565c0] hover:from-[#1565c0] hover:to-[#0d47a1]'
-                } text-white transition-all hover:scale-105 shadow-lg`}>
-                  Start Mission →
-                </button>
+        {/* Top 3 Podium */}
+        <div className="grid grid-cols-3 gap-4 mb-12 max-w-4xl mx-auto">
+          {/* 2nd Place */}
+          <div className="flex flex-col items-center mt-8">
+            <div className="text-6xl mb-3">{globalLeaderboard[1].avatar}</div>
+            <div className={`w-full rounded-t-2xl p-6 text-center ${darkMode ? 'bg-gray-600' : 'bg-gray-300'} shadow-xl`}>
+              <div className="text-5xl mb-2">🥈</div>
+              <div className={`font-bold text-lg mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                {globalLeaderboard[1].name}
               </div>
-            )}
+              <div className={`text-sm ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                {globalLeaderboard[1].xp} XP
+              </div>
+            </div>
+            <div className={`w-full h-32 ${darkMode ? 'bg-gray-700' : 'bg-gray-400'} rounded-b-2xl`}></div>
+          </div>
+
+          {/* 1st Place */}
+          <div className="flex flex-col items-center">
+            <div className="text-7xl mb-3 animate-bounce">{globalLeaderboard[0].avatar}</div>
+            <div className={`w-full rounded-t-2xl p-6 text-center ${darkMode ? 'bg-yellow-600' : 'bg-yellow-400'} shadow-2xl`}>
+              <div className="text-6xl mb-2">👑</div>
+              <div className="font-bold text-xl mb-1 text-gray-900">
+                {globalLeaderboard[0].name}
+              </div>
+              <div className="text-sm text-gray-800">
+                {globalLeaderboard[0].xp} XP
+              </div>
+            </div>
+            <div className={`w-full h-48 ${darkMode ? 'bg-yellow-700' : 'bg-yellow-500'} rounded-b-2xl`}></div>
+          </div>
+
+          {/* 3rd Place */}
+          <div className="flex flex-col items-center mt-12">
+            <div className="text-6xl mb-3">{globalLeaderboard[2].avatar}</div>
+            <div className={`w-full rounded-t-2xl p-6 text-center ${darkMode ? 'bg-orange-700' : 'bg-orange-400'} shadow-xl`}>
+              <div className="text-5xl mb-2">🥉</div>
+              <div className={`font-bold text-lg mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                {globalLeaderboard[2].name}
+              </div>
+              <div className={`text-sm ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                {globalLeaderboard[2].xp} XP
+              </div>
+            </div>
+            <div className={`w-full h-24 ${darkMode ? 'bg-orange-800' : 'bg-orange-500'} rounded-b-2xl`}></div>
+          </div>
+        </div>
+
+        {/* Full Leaderboard Table */}
+        <div className={`rounded-2xl overflow-hidden shadow-2xl ${darkMode ? 'bg-[#161b22]' : 'bg-white'}`}>
+          <div className={`p-4 ${darkMode ? 'bg-[#1e293b]' : 'bg-[#1976d2]'} text-white`}>
+            <h3 className="text-2xl font-bold">Full Rankings</h3>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className={`${darkMode ? 'bg-[#0d1117]' : 'bg-blue-50'}`}>
+                <tr>
+                  <th className={`p-4 text-left ${darkMode ? 'text-[#93c5fd]' : 'text-[#1565c0]'}`}>Rank</th>
+                  <th className={`p-4 text-left ${darkMode ? 'text-[#93c5fd]' : 'text-[#1565c0]'}`}>User</th>
+                  <th className={`p-4 text-right ${darkMode ? 'text-[#93c5fd]' : 'text-[#1565c0]'}`}>XP</th>
+                  <th className={`p-4 text-right ${darkMode ? 'text-[#93c5fd]' : 'text-[#1565c0]'}`}>Streak</th>
+                  <th className={`p-4 text-right ${darkMode ? 'text-[#93c5fd]' : 'text-[#1565c0]'}`}>Missions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {globalLeaderboard.map((user, index) => (
+                  <tr 
+                    key={user.id}
+                    className={`border-b transition-all ${
+                      user.isCurrentUser 
+                        ? darkMode ? 'bg-[#60a5fa]/20 border-[#60a5fa]' : 'bg-blue-100 border-blue-300'
+                        : darkMode ? 'border-[#30363d] hover:bg-[#1e293b]' : 'border-gray-200 hover:bg-blue-50'
+                    }`}
+                  >
+                    <td className="p-4">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-2xl ${getRankColor(index + 1)}`}>
+                          {getRankBadge(index + 1)}
+                        </span>
+                        <span className={`font-bold text-lg ${getRankColor(index + 1)}`}>
+                          #{index + 1}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl">{user.avatar}</span>
+                        <div>
+                          <div className={`font-bold ${darkMode ? 'text-white' : 'text-gray-900'} ${user.isCurrentUser ? 'text-lg' : ''}`}>
+                            {user.name} {user.isCurrentUser && '(You)'}
+                          </div>
+                          <div className={`text-xs ${darkMode ? 'text-[#93c5fd]' : 'text-gray-600'}`}>
+                            {user.country}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className={`p-4 text-right font-bold text-lg ${darkMode ? 'text-[#60a5fa]' : 'text-[#1976d2]'}`}>
+                      {user.xp.toLocaleString()}
+                    </td>
+                    <td className={`p-4 text-right ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      🔥 {user.streak}
+                    </td>
+                    <td className={`p-4 text-right ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      ✅ {user.missionsCompleted}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
 
         {/* Info Box */}
-        <div className={`rounded-2xl p-6 ${darkMode ? 'bg-[#161b22]' : 'bg-blue-50'} border-2 ${darkMode ? 'border-[#30363d]' : 'border-blue-200'}`}>
+        <div className={`mt-8 rounded-2xl p-6 ${darkMode ? 'bg-[#161b22]' : 'bg-blue-50'} border-2 ${darkMode ? 'border-[#30363d]' : 'border-blue-200'}`}>
           <div className="flex items-start gap-4">
             <div className="text-4xl">💡</div>
             <div>
               <h4 className={`font-bold mb-2 text-lg ${darkMode ? 'text-[#60a5fa]' : 'text-[#1976d2]'}`}>
-                Daily Mission Tips
+                How to Climb the Leaderboard
               </h4>
               <ul className={`space-y-1 text-sm ${darkMode ? 'text-[#93c5fd]' : 'text-[#1565c0]'}`}>
-                <li>✅ New mission every day at midnight</li>
-                <li>✅ Complete missions to build your streak</li>
-                <li>✅ Earn XP to unlock new features</li>
-                <li>✅ Challenge yourself with different difficulty levels</li>
+                <li>✅ Complete daily missions to earn XP</li>
+                <li>✅ Maintain your streak for bonus points</li>
+                <li>✅ Practice consistently to improve your rank</li>
+                <li>✅ Challenge friends and compete together</li>
               </ul>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Mission Detail Modal */}
-      {selectedMission && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className={`max-w-3xl w-full rounded-3xl p-8 max-h-[90vh] overflow-y-auto ${
-            darkMode ? 'bg-[#0f1729]' : 'bg-white'
-          }`}>
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <div className="text-6xl mb-4">{selectedMission.icon}</div>
-                <h3 className={`text-3xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-[#0d47a1]'}`}>
-                  {selectedMission.title}
-                </h3>
-                <span className={`px-3 py-1 rounded-full text-sm font-bold ${getDifficultyColor(selectedMission.difficulty)} text-white`}>
-                  {selectedMission.difficulty} • +{selectedMission.xp} XP
-                </span>
-              </div>
-              <button 
-                onClick={() => setSelectedMission(null)}
-                className={`text-3xl ${darkMode ? 'text-white' : 'text-gray-600'} hover:scale-110 transition`}
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Mission Task */}
-            <div className={`mb-6 p-6 rounded-xl ${darkMode ? 'bg-[#1e293b]' : 'bg-blue-50'}`}>
-              <h4 className={`font-bold mb-3 text-lg ${darkMode ? 'text-white' : 'text-[#0d47a1]'}`}>
-                Task:
-              </h4>
-              <p className={`text-base ${darkMode ? 'text-[#93c5fd]' : 'text-[#1565c0]'}`}>
-                {selectedMission.task}
-              </p>
-            </div>
-
-            <div className="mb-6">
-              <label className={`block text-lg font-bold mb-2 ${darkMode ? 'text-white' : 'text-[#0d47a1]'}`}>
-                Your Answer:
-              </label>
-              <textarea
-                value={userAnswer}
-                onChange={(e) => setUserAnswer(e.target.value)}
-                placeholder="Write your answer here..."
-                className={`w-full h-40 p-4 rounded-xl border-2 resize-none ${
-                  darkMode 
-                    ? 'bg-[#1e293b] border-[#374151] text-white placeholder-gray-500' 
-                    : 'bg-white border-gray-300 text-gray-900'
-                }`}
-              />
-            </div>
-
-            <div className="flex gap-4">
-              <button
-                onClick={() => handleCompleteMission(selectedMission.id)}
-                disabled={!userAnswer.trim() || completedMissions.includes(selectedMission.id)}
-                className={`flex-1 py-4 rounded-xl font-bold text-lg transition-all ${
-                  userAnswer.trim() && !completedMissions.includes(selectedMission.id)
-                    ? 'bg-gradient-to-r from-[#60a5fa] to-[#3b82f6] hover:from-[#3b82f6] hover:to-[#2563eb] text-white hover:scale-105'
-                    : 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                }`}
-              >
-                {completedMissions.includes(selectedMission.id) ? '✓ Completed' : 'Submit Mission'}
-              </button>
-              <button
-                onClick={() => setSelectedMission(null)}
-                className={`px-8 py-4 rounded-xl font-bold transition-all ${
-                  darkMode 
-                    ? 'bg-[#1e293b] text-white hover:bg-[#374151]' 
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
