@@ -37,7 +37,7 @@ function App() {
         <Route path="/intermediate-level" element={<IntermediateLevel />} />
         <Route path="/intermediate-dialogues" element={<IntermediateDialogues />} />
         <Route path="/intermediate-grammar" element={<IntermediateGrammar />} />
-        <Route path="/vocabulary-builder" element={<VocabularyBuilder />} />
+        <Route path="/vocabulary" element={<VocabularyBuilder />} />
         <Route path="/challenge-mode" element={<ChallengeMode />} />
         <Route path="/hard-level" element={<HardLevel />} />  {/* ✅ NEW */}
         <Route path="/advanced-grammar" element={<AdvancedGrammar />} />
