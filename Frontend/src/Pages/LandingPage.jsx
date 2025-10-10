@@ -194,9 +194,9 @@ const navigate = useNavigate();
       { icon: "📖", title: "Vocabulary Builder", desc: "Daily words with pronunciation, meaning, and real-world usage examples",link:"/vocabulary" },
       { icon: "🎤", title: "Pronunciation Practice", desc: "AI-powered speech recognition checks your accent accuracy instantly" },
       { icon: "🎧", title: "Listening Practice", desc: "Audio clips, podcasts, and dialogues with comprehension questions" },
-      { icon: "📝", title: "Reading & Comprehension", desc: "Short passages with MCQs to improve understanding and speed" },
+      { icon: "📝", title: "Reading & Comprehension", desc: "Short passages with MCQs to improve understanding and speed" ,link:"/reading"},
       { icon: "💬", title: "Writing Practice", desc: "Daily writing tasks with AI grammar correction and suggestions" },
-      { icon: "👥", title: "Group Discussion", desc: "Join live group discussions to practice speaking and debating in English" }
+      { icon: "👥", title: "Group Discussion", desc: "Join live group discussions to practice speaking and debating in English" ,link:"/discuss"}
     ].map((feature, idx) => (
       <div
         key={idx}
@@ -325,7 +325,7 @@ const navigate = useNavigate();
             {[
               { icon: "🤖", title: "AI Conversation Partner", desc: "Chat with your AI tutor anytime — practice real conversations" },
               { icon: "✨", title: "Real-time Grammar Fix", desc: "AI detects and explains mistakes as you type or speak" },
-              { icon: "🌍", title: "Native Language Support", desc: "Learn in Hindi, Tamil, or your language for better understanding" },
+              { icon: "🌍", title: "Native Language Support", desc: "Learn in Hindi, Tamil, or your language for better understanding",path:"/language" },
               { icon: "🎯", title: "Topic-Based Rooms", desc: "Practice Interview English, Travel English, or Business scenarios" },
               { icon: "📊", title: "Progress Dashboard", desc: "Visualize your vocabulary growth and skill improvements" },
               { icon: "⏱️", title: "5-Min Micro-Lessons", desc: "Short, focused lessons perfect for busy schedules" },
@@ -344,6 +344,15 @@ const navigate = useNavigate();
                 <div className="text-3xl sm:text-4xl mb-3 group-hover:scale-125 transition-transform duration-300">{feature.icon}</div>
                 <h3 className={`text-base sm:text-lg font-bold mb-2 ${darkMode ? 'text-[#e0e7ff]' : 'text-[#0d47a1]'}`}>{feature.title}</h3>
                 <p className={`${darkMode ? 'text-[#94a3b8]' : 'text-[#1565c0]'} text-xs sm:text-sm leading-relaxed`}>{feature.desc}</p>
+
+                {feature.path && (
+      <div
+        onClick={() => navigate(feature.path)}
+        className={`mt-3 font-semibold ${darkMode ? 'text-[#60a5fa]' : 'text-[#1976d2]'} hover:underline cursor-pointer`}
+      >
+        Explore Path →
+      </div>
+    )}
               </div>
             ))}
           </div>

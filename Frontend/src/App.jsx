@@ -21,6 +21,10 @@ import ProfessionalWriting from './Pages/ProfessionalWriting.jsx';
 import AccentTraining from './Pages/AccentTraining.jsx';
 import ProChallenge from './Pages/ProChallenge.jsx';
 import GrammarLessons from './Pages/GrammarLessons.jsx';
+import ReadingComprehension from './Pages/ReadingComprehension.jsx';
+import GroupDiscussion  from './Pages/GroupDiscussion.jsx';
+import NativeLanguageSupport from './Pages/NativeLanguageSupport.jsx';
+
 
 function App() {
   return (
@@ -47,6 +51,9 @@ function App() {
         <Route path="/accent-training" element={<AccentTraining />} />
         <Route path="/pro-challenge" element={<ProChallenge />} />
         <Route path="/grammar" element={<GrammarLessons />} />
+        <Route path="/reading" element={<ReadingComprehension />} />
+        <Route path="/discuss" element={<GroupDiscussion />} />
+         <Route path="/language" element={<NativeLanguageSupport />} />
       </Routes>
     </BrowserRouter>
   );
