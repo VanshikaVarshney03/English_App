@@ -189,7 +189,7 @@ const navigate = useNavigate();
     {/* Other Feature Cards (No onClick) */}
     {[
       { icon: "✍️", title: "Grammar Lessons", desc: "Interactive lessons with examples, quizzes, and instant feedback" },
-      { icon: "📖", title: "Vocabulary Builder", desc: "Daily words with pronunciation, meaning, and real-world usage examples" },
+      { icon: "📖", title: "Vocabulary Builder", desc: "Daily words with pronunciation, meaning, and real-world usage examples",link:"/vocabulary" },
       { icon: "🎤", title: "Pronunciation Practice", desc: "AI-powered speech recognition checks your accent accuracy instantly" },
       { icon: "🎧", title: "Listening Practice", desc: "Audio clips, podcasts, and dialogues with comprehension questions" },
       { icon: "📝", title: "Reading & Comprehension", desc: "Short passages with MCQs to improve understanding and speed" },
