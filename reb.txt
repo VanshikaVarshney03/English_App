@@ -1,521 +1,663 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from 'react-router-dom';
 
-export default function LandingPage() {
+export default function GroupDiscussion() {
   const navigate = useNavigate();
-
-  const texts = ["Speak Better.", "Write Smarter.", "Grow Confident."];
-  const [text, setText] = useState("");
-  const [i, setI] = useState(0);
-  const [j, setJ] = useState(0);
-  const [deleting, setDeleting] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [selectionScreen, setSelectionScreen] = useState(true); // NEW: Selection screen
+  const [matchmaking, setMatchmaking] = useState(false);
+  const [gdStarted, setGdStarted] = useState(false);
+  const [selectedMode, setSelectedMode] = useState(null); // 'ai' or 'strangers'
+  const [selectedTopic, setSelectedTopic] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(600);
+  const [participants, setParticipants] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [userInput, setUserInput] = useState('');
+  const [currentSpeaker, setCurrentSpeaker] = useState(null);
+  const [speaking, setSpeaking] = useState(false);
+  
+  // Video/Camera states
+  const [localStream, setLocalStream] = useState(null);
+  const [remoteStreams, setRemoteStreams] = useState({});
+  const localVideoRef = useRef(null);
+  const [cameraEnabled, setCameraEnabled] = useState(true);
+  const [micEnabled, setMicEnabled] = useState(true);
 
-  // Typing animation
-  useEffect(() => {
-    const speed = deleting ? 50 : 120;
-    const timeout = setTimeout(() => {
-      if (!deleting && j < texts[i].length) {
-        setText(texts[i].substring(0, j + 1));
-        setJ(j + 1);
-      } else if (deleting && j > 0) {
-        setText(texts[i].substring(0, j - 1));
-        setJ(j - 1);
-      } else if (!deleting && j === texts[i].length) {
-        setTimeout(() => setDeleting(true), 1500);
-      } else if (deleting && j === 0) {
-        setDeleting(false);
-        setI((i + 1) % texts.length);
+  // Voice Features
+  const [isListening, setIsListening] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const recognitionRef = useRef(null);
+  const synthesisRef = useRef(window.speechSynthesis);
+
+  const gdTopics = [
+    { id: 1, topic: "Social Media: Boon or Bane?", category: "Technology", difficulty: "Easy" },
+    { id: 2, topic: "Should College Education be Free?", category: "Education", difficulty: "Medium" },
+    { id: 3, topic: "Work From Home vs Office: Future of Work", category: "Career", difficulty: "Easy" },
+    { id: 4, topic: "Is AI a Threat to Human Jobs?", category: "Technology", difficulty: "Medium" },
+    { id: 5, topic: "Climate Change: Individual vs Government Responsibility", category: "Environment", difficulty: "Hard" },
+    { id: 6, topic: "Online Shopping vs Traditional Markets", category: "Business", difficulty: "Easy" },
+    { id: 7, topic: "Should Voting be Made Compulsory?", category: "Politics", difficulty: "Medium" },
+    { id: 8, topic: "Electric Vehicles: Solution to Pollution?", category: "Environment", difficulty: "Medium" },
+    { id: 9, topic: "Impact of OTT Platforms on Cinema", category: "Entertainment", difficulty: "Easy" },
+    { id: 10, topic: "Cryptocurrency: Future of Money?", category: "Finance", difficulty: "Hard" }
+  ];
+
+  const aiParticipants = [
+    { id: 'ai1', name: "Rahul AI", avatar: "🤖", personality: "Agreeable", voiceSettings: { rate: 1.0, pitch: 1.0 } },
+    { id: 'ai2', name: "Priya AI", avatar: "🎭", personality: "Neutral", voiceSettings: { rate: 0.95, pitch: 1.2 } },
+    { id: 'ai3', name: "Amit AI", avatar: "🎪", personality: "Critical", voiceSettings: { rate: 0.9, pitch: 0.9 } },
+    { id: 'ai4', name: "Neha AI", avatar: "🎨", personality: "Supportive", voiceSettings: { rate: 1.05, pitch: 1.1 } }
+  ];
+
+  // Initialize Camera and Mic
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true
+      });
+      
+      setLocalStream(stream);
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
       }
-    }, speed);
-    return () => clearTimeout(timeout);
-  }, [j, deleting, i, texts]);
+    } catch (error) {
+      console.error('Camera access error:', error);
+      alert('Please allow camera and microphone access');
+    }
+  };
 
-  // Scroll animation for cards
+  // Toggle Camera
+  const toggleCamera = () => {
+    if (localStream) {
+      const videoTrack = localStream.getVideoTracks()[0];
+      videoTrack.enabled = !videoTrack.enabled;
+      setCameraEnabled(videoTrack.enabled);
+    }
+  };
+
+  // Toggle Microphone
+  const toggleMic = () => {
+    if (localStream) {
+      const audioTrack = localStream.getAudioTracks()[0];
+      audioTrack.enabled = !audioTrack.enabled;
+      setMicEnabled(audioTrack.enabled);
+    }
+  };
+
+  // Speech Recognition Setup
   useEffect(() => {
-    const cards = document.querySelectorAll(".reveal-card");
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("opacity-100", "translate-y-0");
-          }
-        });
-      },
-      { threshold: 0.2 }
-    );
-    cards.forEach((card) => observer.observe(card));
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-IN';
+
+      recognition.onresult = (event) => {
+        const transcript = Array.from(event.results)
+          .map(result => result[0].transcript)
+          .join('');
+        setUserInput(transcript);
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      // Stop camera on unmount
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+      }
+    };
   }, []);
 
-  return (
-    <div className={`${darkMode ? 'bg-gradient-to-br from-[#0a0e27] to-[#1a1d3a]' : 'bg-gradient-to-br from-[#e3f2fd] to-[#bbdefb]'} ${darkMode ? 'text-[#e0e7ff]' : 'text-[#0d47a1]'} overflow-x-hidden min-h-screen font-[Poppins] transition-colors duration-500`}>
+  // Timer Logic
+  useEffect(() => {
+    if (gdStarted && timeLeft > 0) {
+      const interval = setInterval(() => {
+        setTimeLeft(prev => prev - 1);
+      }, 1000);
+      return () => clearInterval(interval);
+    } else if (timeLeft === 0) {
+      handleEndGD();
+    }
+  }, [gdStarted, timeLeft]);
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // AI Voice Synthesis
+  const speakText = (text, voiceSettings = {}) => {
+    if (!voiceEnabled) return;
+    synthesisRef.current.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = voiceSettings.rate || 1.0;
+    utterance.pitch = voiceSettings.pitch || 1.0;
+    synthesisRef.current.speak(utterance);
+  };
+
+  // Start Matchmaking
+  const startMatchmaking = async (mode) => {
+    setSelectedMode(mode);
+    setSelectionScreen(false);
+    setMatchmaking(true);
+    
+    // Start camera
+    await startCamera();
+    
+    setTimeout(() => {
+      let newParticipants = [];
       
-      {/* Header */}
-      <header className={`fixed top-0 w-full ${darkMode ? 'bg-[#0f1729]/90' : 'bg-white/80'} backdrop-blur-lg px-4 sm:px-8 md:px-16 py-4 flex justify-between items-center z-50 ${darkMode ? 'border-b border-[#2a3441]' : 'border-b border-[#90caf9]'} shadow-[0_4px_12px_rgba(33,150,243,0.1)] animate-slideDown transition-colors duration-500`}>
-        <h1 
-          onClick={() => navigate('/')}
-          className={`text-xl sm:text-2xl font-bold ${darkMode ? 'text-[#60a5fa]' : 'text-[#1976d2]'} animate-fadeIn cursor-pointer`}
-        >
-          PrepTalk
-        </h1>
-        <div className="flex items-center gap-2 sm:gap-3">
-          <Link to="/signup">
-            <button className={`${darkMode ? 'text-[#60a5fa] hover:text-[#3b82f6] border-[#60a5fa] hover:bg-[#1e293b]' : 'text-[#1565c0] hover:text-[#0d47a1] border-[#1976d2] hover:bg-[#e3f2fd]'} border-2 px-3 sm:px-5 py-1.5 sm:py-2 rounded-full transition-all duration-300 hover:scale-110 font-medium text-sm sm:text-base`}>
-              Sign Up
-            </button>
-          </Link>
-          <Link to="/login">
-            <button className={`${darkMode ? 'text-[#60a5fa] hover:text-[#3b82f6] border-[#60a5fa] hover:bg-[#1e293b]' : 'text-[#1565c0] hover:text-[#0d47a1] border-[#1976d2] hover:bg-[#e3f2fd]'} border-2 px-3 sm:px-5 py-1.5 sm:py-2 rounded-full transition-all duration-300 hover:scale-110 font-medium text-sm sm:text-base`}>
-              Login
-            </button>
-          </Link>
-          <Link to="/contact">
-            <button className={`hidden sm:block ${darkMode ? 'text-[#60a5fa] hover:text-[#3b82f6] border-[#60a5fa] hover:bg-[#1e293b]' : 'text-[#1565c0] hover:text-[#0d47a1] border-[#1976d2] hover:bg-[#e3f2fd]'} border-2 px-3 sm:px-5 py-1.5 sm:py-2 rounded-full transition-all duration-300 hover:scale-110 font-medium text-sm sm:text-base`}>
-              Contact Us
-            </button>
-          </Link>
-          <button 
-            onClick={() => setDarkMode(!darkMode)}
-            className={`${darkMode ? 'bg-[#60a5fa] hover:bg-[#3b82f6]' : 'bg-[#1976d2] hover:bg-[#1565c0]'} text-white p-2 sm:p-2.5 rounded-full transition-all duration-300 hover:scale-110 shadow-lg`}
-            aria-label="Toggle Dark Mode"
-          >
-            {darkMode ? '☀️' : '🌙'}
-          </button>
-        </div>
-      </header>
+      if (mode === 'ai') {
+        // AI mode: 2-4 AI participants
+        const randomAI = aiParticipants
+          .sort(() => 0.5 - Math.random())
+          .slice(0, Math.floor(Math.random() * 3) + 2);
+        newParticipants = [
+          { id: 'me', name: "You", avatar: "👤", isMe: true },
+          ...randomAI
+        ];
+      } else {
+        // Strangers mode: Mix of real users and AI
+        const realStrangers = [
+          { id: 'user1', name: "Anonymous User", avatar: "👤", isReal: true, location: "Mumbai", hasVideo: true },
+          { id: 'user2', name: "Student123", avatar: "👨‍🎓", isReal: true, location: "Delhi", hasVideo: true },
+          { id: 'user3', name: "Professional_X", avatar: "👨‍💼", isReal: true, location: "Bangalore", hasVideo: true }
+        ].sort(() => 0.5 - Math.random()).slice(0, Math.floor(Math.random() * 2) + 1);
+        
+        const someAI = aiParticipants
+          .sort(() => 0.5 - Math.random())
+          .slice(0, Math.floor(Math.random() * 2) + 1);
+        
+        newParticipants = [
+          { id: 'me', name: "You", avatar: "👤", isMe: true, hasVideo: true },
+          ...realStrangers,
+          ...someAI
+        ];
+      }
+      
+      setParticipants(newParticipants);
+      
+      const randomTopic = gdTopics[Math.floor(Math.random() * gdTopics.length)];
+      setSelectedTopic(randomTopic);
+      
+      setMatchmaking(false);
+      setGdStarted(true);
+      
+      const moderatorMessage = `Welcome! Today's topic: "${randomTopic.topic}". You have 10 minutes. Let's begin!`;
+      addMessage({
+        sender: "Moderator",
+        avatar: "🎯",
+        text: moderatorMessage,
+        isModerator: true,
+        timestamp: new Date().toLocaleTimeString()
+      });
 
-      {/* Hero */}
-      <section className={`min-h-screen flex flex-col justify-center items-center text-center px-4 sm:px-6 md:px-20 py-20 sm:py-24 ${darkMode ? 'bg-gradient-to-br from-[#0f1729] via-[#1a1f3a] to-[#0a0e27]' : 'bg-gradient-to-br from-[#e1f5fe] via-[#b3e5fc] to-[#81d4fa]'} relative overflow-hidden transition-colors duration-500`}>
-        {/* Animated Background Circles */}
-        <div className={`absolute top-10 sm:top-20 left-5 sm:left-10 w-60 sm:w-80 h-60 sm:h-80 ${darkMode ? 'bg-[#3b82f6]' : 'bg-[#64b5f6]'} rounded-full opacity-20 blur-3xl animate-pulse-slow`}></div>
-        <div className={`absolute bottom-10 sm:bottom-20 right-5 sm:right-10 w-72 sm:w-96 h-72 sm:h-96 ${darkMode ? 'bg-[#2563eb]' : 'bg-[#42a5f5]'} rounded-full opacity-20 blur-3xl animate-pulse-slow animation-delay-1000`}></div>
-        <div className={`absolute top-1/2 left-1/4 w-48 sm:w-64 h-48 sm:h-64 ${darkMode ? 'bg-[#1e40af]' : 'bg-[#2196f3]'} rounded-full opacity-15 blur-3xl animate-float`}></div>
-        
-        {/* Centered Floating Emojis */}
-        <div className="w-full flex justify-center items-center mb-8 sm:mb-12">
-          <div className="flex justify-center items-center gap-8 sm:gap-12 md:gap-16 animate-floatIcons">
-            <div className="text-3xl sm:text-4xl md:text-5xl opacity-80 drop-shadow-[0_0_25px_rgba(25,118,210,0.6)] animate-bounce animation-delay-200">📚</div>
-            <div className="text-3xl sm:text-4xl md:text-5xl opacity-80 drop-shadow-[0_0_25px_rgba(25,118,210,0.6)] animate-bounce animation-delay-400">💬</div>
-            <div className="text-3xl sm:text-4xl md:text-5xl opacity-80 drop-shadow-[0_0_25px_rgba(25,118,210,0.6)] animate-bounce animation-delay-600">🎯</div>
-            <div className="text-3xl sm:text-4xl md:text-5xl opacity-80 drop-shadow-[0_0_25px_rgba(25,118,210,0.6)] animate-bounce animation-delay-800">✍️</div>
-          </div>
-        </div>
+      speakText(moderatorMessage);
+      setTimeout(() => startAIConversation(), 3000);
+    }, 3000);
+  };
 
-        <h2 className={`text-3xl sm:text-4xl md:text-5xl font-bold leading-tight mb-4 ${darkMode ? 'text-[#e0e7ff]' : 'text-[#0d47a1]'} animate-fadeInUp animation-delay-200 px-4`}>
-          Learn English to <span className={`${darkMode ? 'text-[#60a5fa] border-[#60a5fa]' : 'text-[#1976d2] border-[#1976d2]'} border-r-2 animate-pulse`}>{text}</span>
-        </h2>
-        
-        <p className={`max-w-3xl ${darkMode ? 'text-[#94a3b8]' : 'text-[#1565c0]'} text-base sm:text-lg md:text-xl mb-3 animate-fadeInUp animation-delay-400 font-medium px-4`}>
-          PrepTalk: Where interview preparation meets English mastery
-        </p>
-        
-        <div className={`${darkMode ? 'text-[#60a5fa]' : 'text-[#1976d2]'} text-xs sm:text-sm md:text-base mb-6 animate-fadeInUp animation-delay-600 flex flex-wrap justify-center gap-2 sm:gap-3 px-4`}>
-          <span className={`${darkMode ? 'bg-[#1e293b]/60' : 'bg-white/60'} px-2 sm:px-3 py-1 sm:py-1.5 rounded-full whitespace-nowrap`}>🏆 Track Progress</span>
-          <span className={`${darkMode ? 'bg-[#1e293b]/60' : 'bg-white/60'} px-2 sm:px-3 py-1 sm:py-1.5 rounded-full whitespace-nowrap`}>🔥 Daily Streaks</span>
-          <span className={`${darkMode ? 'bg-[#1e293b]/60' : 'bg-white/60'} px-2 sm:px-3 py-1 sm:py-1.5 rounded-full whitespace-nowrap`}>🎯 Level-Based Learning</span>
-        </div>
-        
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 animate-fadeInUp animation-delay-800 w-full max-w-md px-4">
-          <button 
-            onClick={() => navigate('/dashboard')}
-            className={`w-full sm:w-auto ${darkMode ? 'bg-gradient-to-r from-[#3b82f6] to-[#2563eb] hover:from-[#2563eb] hover:to-[#1d4ed8]' : 'bg-gradient-to-r from-[#1976d2] to-[#1565c0] hover:from-[#1565c0] hover:to-[#0d47a1]'} text-white px-6 sm:px-8 py-3 rounded-full text-base sm:text-lg font-semibold shadow-[0_8px_24px_rgba(25,118,210,0.5)] transition-all duration-500 hover:shadow-[0_12px_32px_rgba(25,118,210,0.7)] hover:-translate-y-2 hover:scale-110`}
-          >
-            Start Learning Free
-          </button>
-          <button 
-            onClick={() => navigate('/learning-paths')}
-            className={`w-full sm:w-auto ${darkMode ? 'bg-[#1e293b]/90 text-[#60a5fa] border-[#60a5fa] hover:bg-[#1e293b]' : 'bg-white/90 text-[#1976d2] border-[#1976d2] hover:bg-white'} px-6 sm:px-8 py-3 rounded-full text-base sm:text-lg font-semibold border-2 transition-all duration-300 hover:scale-105 hover:shadow-xl`}
-          >
-            Watch Demo
-          </button>
-        </div>
+  const addMessage = (message) => {
+    setMessages(prev => [...prev, message]);
+  };
 
-        <div className="mt-10 sm:mt-12 flex flex-wrap justify-center items-center gap-4 sm:gap-6 animate-fadeInUp animation-delay-1000 px-4">
-          <div className="text-center">
-            <div className={`text-xl sm:text-2xl font-bold ${darkMode ? 'text-[#e0e7ff]' : 'text-[#0d47a1]'}`}>10K+</div>
-            <div className={`text-xs ${darkMode ? 'text-[#94a3b8]' : 'text-[#1565c0]'}`}>Active Users</div>
-          </div>
-          <div className={`w-px h-8 sm:h-10 ${darkMode ? 'bg-[#374151]' : 'bg-[#90caf9]'}`}></div>
-          <div className="text-center">
-            <div className={`text-xl sm:text-2xl font-bold ${darkMode ? 'text-[#e0e7ff]' : 'text-[#0d47a1]'}`}>50K+</div>
-            <div className={`text-xs ${darkMode ? 'text-[#94a3b8]' : 'text-[#1565c0]'}`}>Lessons Completed</div>
-          </div>
-          <div className={`w-px h-8 sm:h-10 ${darkMode ? 'bg-[#374151]' : 'bg-[#90caf9]'}`}></div>
-          <div className="text-center">
-            <div className={`text-xl sm:text-2xl font-bold ${darkMode ? 'text-[#e0e7ff]' : 'text-[#0d47a1]'}`}>4.8★</div>
-            <div className={`text-xs ${darkMode ? 'text-[#94a3b8]' : 'text-[#1565c0]'}`}>User Rating</div>
-          </div>
-        </div>
-      </section>
+  const startAIConversation = () => {
+    const aiMessages = [
+      "I believe this is a very relevant topic in today's context.",
+      "Let me present a contrasting viewpoint here.",
+      "According to recent studies, data shows significant trends.",
+      "I agree with the previous speaker, and I'd like to add my perspective.",
+      "That's an interesting point, but consider the alternative.",
+      "From a practical standpoint, implementation is key.",
+      "We need to balance both sides carefully.",
+      "Research indicates this approach has proven effective."
+    ];
 
-      {/* Core Features */}
-      <section id="features" className={`py-16 sm:py-20 md:py-24 px-4 sm:px-6 md:px-20 ${darkMode ? 'bg-gradient-to-br from-[#0f1729] to-[#1a1f3a]' : 'bg-gradient-to-br from-[#e8f4fd] to-[#d1e9f6]'} transition-colors duration-500`}>
-        <div className="text-center mb-10 sm:mb-12">
-          <span className={`${darkMode ? 'bg-[#3b82f6] text-white' : 'bg-[#1976d2] text-white'} px-4 sm:px-5 py-2 rounded-full text-xs font-semibold mb-4 inline-block animate-fadeIn`}>
-            COMPREHENSIVE FEATURES
-          </span>
-          <h2 className={`text-2xl sm:text-3xl md:text-4xl ${darkMode ? 'text-[#60a5fa]' : 'text-[#1976d2]'} font-bold mb-4 animate-fadeIn animation-delay-200 px-4`}>
-            Complete Learning System
-          </h2>
-          <p className={`text-center ${darkMode ? 'text-[#94a3b8]' : 'text-[#1565c0]'} text-sm sm:text-base mb-4 max-w-3xl mx-auto animate-fadeIn animation-delay-400 px-4`}>
-            From beginner to advanced — master English with structured lessons, real-time feedback, and interactive practice
-          </p>
-        </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 max-w-7xl mx-auto">
-          {/* Level-Based Learning Paths - Clickable */}
-          <div
-            onClick={() => navigate('/learning-paths')}
-            className={`reveal-card cursor-pointer ${darkMode ? 'bg-[#1e293b]/95 border-[#374151]' : 'bg-white/95 border-[#90caf9]'} backdrop-blur-sm p-6 sm:p-7 rounded-2xl sm:rounded-3xl shadow-xl border-2 opacity-0 translate-y-8 transition-all duration-700 hover:shadow-[0_16px_40px_rgba(25,118,210,0.3)] hover:-translate-y-4 ${darkMode ? 'hover:border-[#60a5fa]' : 'hover:border-[#1976d2]'} hover:scale-105 sm:hover:scale-110 hover:rotate-1 sm:hover:rotate-2 group`}
-          >
-            <div className="text-3xl sm:text-4xl mb-3 group-hover:scale-125 transition-transform duration-300">📚</div>
-            <h3 className={`text-base sm:text-lg font-bold mb-2 ${darkMode ? 'text-[#e0e7ff]' : 'text-[#0d47a1]'}`}>
-              Level-Based Learning Paths
-            </h3>
-            <p className={`${darkMode ? 'text-[#94a3b8]' : 'text-[#1565c0]'} text-xs sm:text-sm leading-relaxed`}>
-              Progress from A1 to C1 with structured courses designed for your level
-            </p>
-            <div className={`mt-3 text-sm font-semibold ${darkMode ? 'text-[#60a5fa]' : 'text-[#1976d2]'} flex items-center gap-1`}>
-              Explore Paths →
-            </div>
-          </div>
+    const aiSpeakers = participants.filter(p => !p.isReal && !p.isMe);
+    let messageIndex = 0;
 
-          {/* Other Clickable Feature Cards */}
-          {/* Other Clickable Feature Cards */}
-{[
-  { icon: "✍️", title: "Grammar Lessons", desc: "Interactive lessons with examples, quizzes, and instant feedback", link: "/grammar-starter" },
-  { icon: "📖", title: "Vocabulary Builder", desc: "Daily words with pronunciation, meaning, and real-world usage examples", link: "/vocabulary-builder" },
-  { icon: "🎤", title: "Pronunciation Practice", desc: "AI-powered speech recognition checks your accent accuracy instantly", link: "/accent-training" },
-  { icon: "🎧", title: "Listening Practice", desc: "Audio clips, podcasts, and dialogues with comprehension questions", link: "/intermediate-dialogues" },
-  { icon: "📝", title: "Reading & Comprehension", desc: "Short passages with MCQs to improve understanding and speed", link: "/daily-words" },
-  { icon: "💬", title: "Writing Practice", desc: "Daily writing tasks with AI grammar correction and suggestions", link: "/professional-writing" },
-  { icon: "👥", title: "Group Discussion", desc: "Join live group discussions to practice speaking and debating in English", link: "/group-discussion" }
-].map((feature, idx) => (
-  <div
-    key={idx}
-    onClick={() => navigate(feature.link)}
-    className={`reveal-card cursor-pointer ${darkMode ? 'bg-[#1e293b]/95 border-[#374151]' : 'bg-white/95 border-[#90caf9]'} backdrop-blur-sm p-6 sm:p-7 rounded-2xl sm:rounded-3xl shadow-xl border-2 opacity-0 translate-y-8 transition-all duration-700 hover:shadow-[0_16px_40px_rgba(25,118,210,0.3)] hover:-translate-y-4 ${darkMode ? 'hover:border-[#60a5fa]' : 'hover:border-[#1976d2]'} hover:scale-105 sm:hover:scale-110 hover:rotate-1 sm:hover:rotate-2 group`}
-  >
-    <div className="text-3xl sm:text-4xl mb-3 group-hover:scale-125 transition-transform duration-300">{feature.icon}</div>
-    <h3 className={`text-base sm:text-lg font-bold mb-2 ${darkMode ? 'text-[#e0e7ff]' : 'text-[#0d47a1]'}`}>{feature.title}</h3>
-    <p className={`${darkMode ? 'text-[#94a3b8]' : 'text-[#1565c0]'} text-xs sm:text-sm leading-relaxed`}>{feature.desc}</p>
-    <div className={`mt-3 text-sm font-semibold ${darkMode ? 'text-[#60a5fa]' : 'text-[#1976d2]'} flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity`}>
-      Try Now →
-    </div>
-  </div>
-))}
+    const speakInterval = setInterval(() => {
+      if (!gdStarted || timeLeft === 0) {
+        clearInterval(speakInterval);
+        return;
+      }
 
-      {/* Gamification */}
-      <section id="gamification" className={`py-16 sm:py-20 md:py-24 px-4 sm:px-6 md:px-20 ${darkMode ? 'bg-gradient-to-br from-[#1a1f3a] via-[#0f1729] to-[#0a0e27]' : 'bg-gradient-to-br from-[#e1f5fe] via-[#b3e5fc] to-[#81d4fa]'} relative overflow-hidden transition-colors duration-500`}>
-        <div className={`absolute top-10 right-10 sm:right-20 w-72 sm:w-96 h-72 sm:h-96 ${darkMode ? 'bg-[#2563eb]' : 'bg-[#42a5f5]'} rounded-full opacity-15 blur-3xl animate-pulse-slow`}></div>
-        <div className={`absolute bottom-10 left-10 sm:left-20 w-72 sm:w-96 h-72 sm:h-96 ${darkMode ? 'bg-[#3b82f6]' : 'bg-[#1976d2]'} rounded-full opacity-15 blur-3xl animate-pulse-slow animation-delay-1000`}></div>
-        
-        <div className="text-center mb-10 sm:mb-12 relative z-10">
-          <span className={`${darkMode ? 'bg-[#3b82f6] text-white' : 'bg-[#1976d2] text-white'} px-4 sm:px-5 py-2 rounded-full text-xs font-semibold mb-4 inline-block animate-fadeIn`}>
-            GAMIFIED LEARNING
-          </span>
-          <h2 className={`text-2xl sm:text-3xl md:text-4xl ${darkMode ? 'text-[#60a5fa]' : 'text-[#0d47a1]'} font-bold mb-4 animate-fadeIn animation-delay-200 px-4`}>
-            Learn While You Play
-          </h2>
-          <p className={`text-center ${darkMode ? 'text-[#94a3b8]' : 'text-[#1565c0]'} text-sm sm:text-base mb-4 max-w-3xl mx-auto animate-fadeIn animation-delay-400 px-4`}>
-            Gamified learning keeps you motivated and makes progress fun
-          </p>
-        </div>
-        
-        <div className="max-w-6xl mx-auto relative z-10">
-          {/* First Row - 3 Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-6 sm:mb-8">
-            {[
-              { icon: "🏆", title: "XP Points & Badges", desc: "Earn rewards for completing lessons, quizzes, and challenges" },
-              { icon: "🔥", title: "Streak Rewards", desc: "Practice daily to unlock special badges and bonus XP" },
-              { icon: "🎯", title: "Quests & Missions", desc: "Complete goals like 'Speak for 3 minutes' or 'Learn 50 words'" }
-            ].map((feature, idx) => (
-              <div
-                key={idx}
-                className={`reveal-card ${darkMode ? 'bg-[#1e293b]/95 border-[#374151]' : 'bg-white/95 border-[#64b5f6]'} backdrop-blur-md p-6 sm:p-7 rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl border-2 opacity-0 translate-y-8 transition-all duration-700 hover:shadow-[0_20px_48px_rgba(25,118,210,0.4)] hover:-translate-y-4 sm:hover:-translate-y-5 ${darkMode ? 'hover:border-[#60a5fa]' : 'hover:border-[#1976d2]'} hover:scale-105 sm:hover:scale-110 hover:rotate-2 sm:hover:rotate-3 group`}
-              >
-                <div className="text-4xl sm:text-5xl mb-3 animate-bounce-slow group-hover:scale-125 transition-transform duration-300">{feature.icon}</div>
-                <h3 className={`text-base sm:text-lg font-bold mb-2 ${darkMode ? 'text-[#e0e7ff]' : 'text-[#0d47a1]'}`}>{feature.title}</h3>
-                <p className={`${darkMode ? 'text-[#94a3b8]' : 'text-[#1565c0]'} text-xs sm:text-sm leading-relaxed`}>{feature.desc}</p>
-              </div>
-            ))}
-          </div>
+      const speaker = aiSpeakers[messageIndex % aiSpeakers.length];
+      const message = aiMessages[Math.floor(Math.random() * aiMessages.length)];
+
+      setCurrentSpeaker(speaker.id);
+      setSpeaking(true);
+
+      if (voiceEnabled) {
+        speakText(message, speaker.voiceSettings);
+      }
+
+      setTimeout(() => {
+        addMessage({
+          sender: speaker.name,
+          avatar: speaker.avatar,
+          text: message,
+          timestamp: new Date().toLocaleTimeString(),
+          isAI: true
+        });
+        setSpeaking(false);
+        setCurrentSpeaker(null);
+      }, 2000);
+
+      messageIndex++;
+    }, 10000);
+  };
+
+  const toggleVoiceRecognition = () => {
+    if (!recognitionRef.current) {
+      alert('Speech recognition not supported');
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
+
+  const handleSpeak = () => {
+    if (!userInput.trim()) return;
+
+    setCurrentSpeaker('me');
+    setSpeaking(true);
+
+    setTimeout(() => {
+      addMessage({
+        sender: "You",
+        avatar: "👤",
+        text: userInput,
+        timestamp: new Date().toLocaleTimeString(),
+        isMe: true
+      });
+      setUserInput('');
+      setSpeaking(false);
+      setCurrentSpeaker(null);
+    }, 1500);
+  };
+
+  const handleEndGD = () => {
+    setGdStarted(false);
+    const endMessage = "Time's up! Thank you for participating!";
+    
+    addMessage({
+      sender: "Moderator",
+      avatar: "🎯",
+      text: endMessage,
+      isModerator: true,
+      timestamp: new Date().toLocaleTimeString()
+    });
+
+    speakText(endMessage);
+    
+    if (recognitionRef.current && isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    }
+    
+    // Stop camera
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.stop());
+    }
+  };
+
+  // Selection Screen (AI vs Strangers)
+  if (selectionScreen) {
+    return (
+      <div className={`min-h-screen font-[Poppins] transition-colors duration-500 ${
+        darkMode ? "bg-[#0d1117] text-white" : "bg-gradient-to-br from-[#e3f2fd] to-[#bbdefb] text-[#0d47a1]"
+      }`}>
+        <header className={`sticky top-0 z-50 backdrop-blur-lg px-8 md:px-16 py-4 flex justify-between items-center border-b transition-all duration-500 ${
+          darkMode ? "bg-[#161b22]/90 border-[#30363d]" : "bg-white/80 border-[#90caf9] shadow-[0_4px_12px_rgba(33,150,243,0.1)]"
+        }`}>
+          <h1 className={`text-2xl font-bold cursor-pointer ${darkMode ? "text-[#60a5fa]" : "text-[#1976d2]"}`} onClick={() => navigate('/dashboard')}>
+            PrepTalk
+          </h1>
           
-          {/* Second Row - 2 Cards Centered */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 max-w-3xl mx-auto">
-            {[
-              { icon: "📈", title: "Leaderboards", desc: "Compete with friends and classmates for top rankings" },
-              { icon: "🧩", title: "Mini Games", desc: "Word puzzles, matching games, and fill-in-the-blanks" }
-            ].map((feature, idx) => (
-              <div
-                key={idx}
-                className={`reveal-card ${darkMode ? 'bg-[#1e293b]/95 border-[#374151]' : 'bg-white/95 border-[#64b5f6]'} backdrop-blur-md p-6 sm:p-7 rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl border-2 opacity-0 translate-y-8 transition-all duration-700 hover:shadow-[0_20px_48px_rgba(25,118,210,0.4)] hover:-translate-y-4 sm:hover:-translate-y-5 ${darkMode ? 'hover:border-[#60a5fa]' : 'hover:border-[#1976d2]'} hover:scale-105 sm:hover:scale-110 hover:rotate-2 sm:hover:rotate-3 group`}
-              >
-                <div className="text-4xl sm:text-5xl mb-3 animate-bounce-slow group-hover:scale-125 transition-transform duration-300">{feature.icon}</div>
-                <h3 className={`text-base sm:text-lg font-bold mb-2 ${darkMode ? 'text-[#e0e7ff]' : 'text-[#0d47a1]'}`}>{feature.title}</h3>
-                <p className={`${darkMode ? 'text-[#94a3b8]' : 'text-[#1565c0]'} text-xs sm:text-sm leading-relaxed`}>{feature.desc}</p>
-              </div>
-            ))}
+          <div className="flex gap-3">
+            <button onClick={() => navigate('/dashboard')} className={`${darkMode ? "text-[#60a5fa] border-[#60a5fa]" : "text-[#1565c0] border-[#1976d2]"} border-2 px-4 py-2 rounded-full transition-all`}>
+              ← Back
+            </button>
+            <button onClick={() => setDarkMode(!darkMode)} className={`${darkMode ? "bg-[#60a5fa] hover:bg-[#3b82f6]" : "bg-[#1976d2] hover:bg-[#1565c0]"} text-white p-2.5 rounded-full transition-all`}>
+              {darkMode ? '☀️' : '🌙'}
+            </button>
           </div>
-        </div>
-      </section>
+        </header>
 
-      {/* CTA Section */}
-      <section className={`py-16 sm:py-20 md:py-24 px-4 sm:px-6 text-center ${darkMode ? 'bg-gradient-to-br from-[#1e3a8a] to-[#1e40af]' : 'bg-gradient-to-br from-[#90caf9] to-[#64b5f6]'} relative overflow-hidden transition-colors duration-500`}>
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9IiMxOTc2ZDIiIG9wYWNpdHk9IjAuMSIvPjwvc3ZnPg==')] opacity-30"></div>
-        
-        <div className="relative z-10">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 text-white animate-fadeInUp px-4">
-            Ready to Master English?
-          </h2>
-          <p className={`${darkMode ? 'text-[#bfdbfe]' : 'text-[#e3f2fd]'} text-base sm:text-lg mb-6 sm:mb-8 max-w-2xl mx-auto animate-fadeInUp animation-delay-200 px-4`}>
-            Join thousands of learners improving their English skills every day with PrepTalk
-          </p>
-          <button 
-            onClick={() => navigate('/signup')}
-            className="bg-white text-[#1976d2] px-8 sm:px-10 py-3 sm:py-4 rounded-full text-base sm:text-lg font-bold hover:bg-[#e3f2fd] shadow-[0_8px_28px_rgba(13,71,161,0.4)] transition-all duration-500 hover:shadow-[0_12px_36px_rgba(13,71,161,0.6)] hover:-translate-y-2 hover:scale-110 animate-fadeInUp animation-delay-400"
-          >
-            Get Started Now — It's Free
-          </button>
-        </div>
-      </section>
-
-      {/* What Makes Us Different - Horizontal Scroll */}
-      <section className={`py-16 sm:py-20 md:py-24 px-4 sm:px-6 md:px-20 ${darkMode ? 'bg-gradient-to-br from-[#0f1729] to-[#1a1f3a]' : 'bg-gradient-to-br from-[#bbdefb] to-[#90caf9]'} overflow-hidden transition-colors duration-500`}>
-        <div className="text-center mb-10 sm:mb-12">
-          <span className={`${darkMode ? 'bg-[#1e293b] text-[#60a5fa] border-[#374151]' : 'bg-white text-[#1976d2]'} px-4 sm:px-5 py-2 rounded-full text-xs font-semibold mb-4 inline-block animate-fadeIn border`}>
-            WHY CHOOSE US
-          </span>
-          <h2 className={`text-2xl sm:text-3xl md:text-4xl ${darkMode ? 'text-[#60a5fa]' : 'text-[#0d47a1]'} font-bold mb-4 animate-fadeIn animation-delay-200 px-4`}>
-            What Makes Us Different
-          </h2>
-          <p className={`text-center ${darkMode ? 'text-[#94a3b8]' : 'text-[#1565c0]'} text-sm sm:text-base mb-6 sm:mb-8 max-w-3xl mx-auto animate-fadeIn animation-delay-400 px-4`}>
-            Powered by AI technology and designed for real-world communication
-          </p>
-        </div>
-        
-        {/* Horizontal Scrolling Container */}
-        <div className="relative">
-          <div className="flex animate-scroll-fast gap-4 sm:gap-6">
-            {[
-              { icon: "🤖", title: "AI Conversation Partner", desc: "Chat with your AI tutor anytime — practice real conversations" },
-              { icon: "✨", title: "Real-time Grammar Fix", desc: "AI detects and explains mistakes as you type or speak" },
-              { icon: "🌍", title: "Native Language Support", desc: "Learn in Hindi, Tamil, or your language for better understanding" },
-              { icon: "🎯", title: "Topic-Based Rooms", desc: "Practice Interview English, Travel English, or Business scenarios" },
-              { icon: "📊", title: "Progress Dashboard", desc: "Visualize your vocabulary growth and skill improvements" },
-              { icon: "⏱️", title: "5-Min Micro-Lessons", desc: "Short, focused lessons perfect for busy schedules" },
-              { icon: "👥", title: "Community Practice", desc: "Chat with learners worldwide in 'English-only' mode" },
-              { icon: "🔥", title: "Daily Streaks", desc: "Build consistency with daily challenges and rewards" },
-              // Duplicate for seamless loop
-              { icon: "🤖", title: "AI Conversation Partner", desc: "Chat with your AI tutor anytime — practice real conversations" },
-              { icon: "✨", title: "Real-time Grammar Fix", desc: "AI detects and explains mistakes as you type or speak" },
-              { icon: "🌍", title: "Native Language Support", desc: "Learn in Hindi, Tamil, or your language for better understanding" },
-              { icon: "🎯", title: "Group Discussion", desc: "Practice Interview English, Travel English, or Business scenarios" }
-            ].map((feature, idx) => (
-              <div
-                key={idx}
-                className={`flex-shrink-0 w-72 sm:w-80 ${darkMode ? 'bg-[#1e293b]/95 border-[#374151] hover:to-[#1e293b]' : 'bg-white/95 border-[#64b5f6] hover:to-[#e3f2fd]'} backdrop-blur-sm p-6 sm:p-7 rounded-2xl sm:rounded-3xl shadow-xl border-2 transition-all duration-300 hover:shadow-[0_16px_40px_rgba(25,118,210,0.35)] ${darkMode ? 'hover:border-[#60a5fa]' : 'hover:border-[#1976d2]'} hover:bg-gradient-to-br hover:from-white hover:scale-105 group`}
-              >
-                <div className="text-3xl sm:text-4xl mb-3 group-hover:scale-125 transition-transform duration-300">{feature.icon}</div>
-                <h3 className={`text-base sm:text-lg font-bold mb-2 ${darkMode ? 'text-[#e0e7ff]' : 'text-[#0d47a1]'}`}>{feature.title}</h3>
-                <p className={`${darkMode ? 'text-[#94a3b8]' : 'text-[#1565c0]'} text-xs sm:text-sm leading-relaxed`}>{feature.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Comprehensive Footer */}
-      <footer className={`${darkMode ? 'bg-gradient-to-r from-[#0f1729] to-[#1a1f3a]' : 'bg-gradient-to-r from-[#1976d2] to-[#1565c0]'} ${darkMode ? 'border-t border-[#2a3441]' : 'border-t border-[#42a5f5]'} transition-colors duration-500`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-20 py-12 sm:py-16">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
-            {/* About Section */}
-            <div>
-              <h3 className="text-xl font-bold text-white mb-4">PrepTalk</h3>
-              <p className={`${darkMode ? 'text-[#94a3b8]' : 'text-white/80'} text-sm mb-4`}>
-                Master English through AI-powered conversations, gamified learning, and personalized practice for interviews and beyond.
-              </p>
-              <div className="flex gap-3">
-                <a href="#" className={`${darkMode ? 'bg-[#1e293b] hover:bg-[#2d3748]' : 'bg-white/20 hover:bg-white/30'} p-2 rounded-full transition`}>
-                  <span className="text-xl">📘</span>
-                </a>
-                <a href="#" className={`${darkMode ? 'bg-[#1e293b] hover:bg-[#2d3748]' : 'bg-white/20 hover:bg-white/30'} p-2 rounded-full transition`}>
-                  <span className="text-xl">🐦</span>
-                </a>
-                <a href="#" className={`${darkMode ? 'bg-[#1e293b] hover:bg-[#2d3748]' : 'bg-white/20 hover:bg-white/30'} p-2 rounded-full transition`}>
-                  <span className="text-xl">📸</span>
-                </a>
-                <a href="#" className={`${darkMode ? 'bg-[#1e293b] hover:bg-[#2d3748]' : 'bg-white/20 hover:bg-white/30'} p-2 rounded-full transition`}>
-                  <span className="text-xl">💼</span>
-                </a>
-              </div>
-            </div>
-
-            {/* Quick Links */}
-            <div>
-              <h4 className="text-white font-semibold mb-4">Quick Links</h4>
-              <ul className="space-y-2">
-                <li><a href="#features" className={`${darkMode ? 'text-[#94a3b8] hover:text-[#60a5fa]' : 'text-white/80 hover:text-white'} text-sm transition`}>Features</a></li>
-                <li><a href="#" className={`${darkMode ? 'text-[#94a3b8] hover:text-[#60a5fa]' : 'text-white/80 hover:text-white'} text-sm transition`}>Pricing</a></li>
-                <li><a href="#" className={`${darkMode ? 'text-[#94a3b8] hover:text-[#60a5fa]' : 'text-white/80 hover:text-white'} text-sm transition`}>About Us</a></li>
-                <li><a href="#" className={`${darkMode ? 'text-[#94a3b8] hover:text-[#60a5fa]' : 'text-white/80 hover:text-white'} text-sm transition`}>Blog</a></li>
-                <li><a href="#" className={`${darkMode ? 'text-[#94a3b8] hover:text-[#60a5fa]' : 'text-white/80 hover:text-white'} text-sm transition`}>Careers</a></li>
-              </ul>
-            </div>
-
-            {/* Resources */}
-            <div>
-              <h4 className="text-white font-semibold mb-4">Resources</h4>
-              <ul className="space-y-2">
-                <li><a href="#" className={`${darkMode ? 'text-[#94a3b8] hover:text-[#60a5fa]' : 'text-white/80 hover:text-white'} text-sm transition`}>Help Center</a></li>
-                <li><a href="#" className={`${darkMode ? 'text-[#94a3b8] hover:text-[#60a5fa]' : 'text-white/80 hover:text-white'} text-sm transition`}>FAQs</a></li>
-                <li><a href="#" className={`${darkMode ? 'text-[#94a3b8] hover:text-[#60a5fa]' : 'text-white/80 hover:text-white'} text-sm transition`}>Tutorials</a></li>
-                <li><a href="#" className={`${darkMode ? 'text-[#94a3b8] hover:text-[#60a5fa]' : 'text-white/80 hover:text-white'} text-sm transition`}>Community</a></li>
-                <li><a href="#" className={`${darkMode ? 'text-[#94a3b8] hover:text-[#60a5fa]' : 'text-white/80 hover:text-white'} text-sm transition`}>API Docs</a></li>
-              </ul>
-            </div>
-
-            {/* Contact */}
-            <div>
-              <h4 className="text-white font-semibold mb-4">Contact Us</h4>
-              <ul className="space-y-3">
-                <li className="flex items-start gap-2">
-                  <span className="text-lg">📧</span>
-                  <a href="mailto:hello@preptalk.com" className={`${darkMode ? 'text-[#94a3b8] hover:text-[#60a5fa]' : 'text-white/80 hover:text-white'} text-sm transition`}>hello@preptalk.com</a>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-lg">📞</span>
-                  <a href="tel:+911234567890" className={`${darkMode ? 'text-[#94a3b8] hover:text-[#60a5fa]' : 'text-white/80 hover:text-white'} text-sm transition`}>+91 123 456 7890</a>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-lg">📍</span>
-                  <span className={`${darkMode ? 'text-[#94a3b8]' : 'text-white/80'} text-sm`}>Mumbai, India</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Bottom Bar */}
-          <div className={`pt-8 ${darkMode ? 'border-t border-[#2a3441]' : 'border-t border-white/20'} flex flex-col sm:flex-row justify-between items-center gap-4`}>
-            <p className={`${darkMode ? 'text-[#94a3b8]' : 'text-white/80'} text-sm text-center sm:text-left`}>
-              © 2025 PrepTalk. All Rights Reserved.
+        <section className="max-w-6xl mx-auto px-4 py-12">
+          <div className="text-center mb-12">
+            <div className="text-6xl mb-4">💬</div>
+            <h1 className={`text-4xl font-bold mb-4 ${darkMode ? "text-[#60a5fa]" : "text-[#0d47a1]"}`}>
+              Group Discussion Practice
+            </h1>
+            <p className={`text-lg ${darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"}`}>
+              Choose your practice mode with camera and voice enabled
             </p>
-            <div className="flex gap-6">
-              <a href="#" className={`${darkMode ? 'text-[#94a3b8] hover:text-[#60a5fa]' : 'text-white/80 hover:text-white'} text-sm transition`}>Privacy Policy</a>
-              <a href="#" className={`${darkMode ? 'text-[#94a3b8] hover:text-[#60a5fa]' : 'text-white/80 hover:text-white'} text-sm transition`}>Terms of Service</a>
-              <a href="#" className={`${darkMode ? 'text-[#94a3b8] hover:text-[#60a5fa]' : 'text-white/80 hover:text-white'} text-sm transition`}>Cookie Policy</a>
+          </div>
+
+          {/* Mode Selection */}
+          <div className="grid md:grid-cols-2 gap-8 mb-8">
+            {/* Practice with AI */}
+            <div className={`backdrop-blur-sm rounded-3xl p-12 transition-all duration-500 hover:scale-105 cursor-pointer ${
+              darkMode ? "bg-[#161b22]/90 hover:bg-[#1e293b]" : "bg-white/90 hover:bg-blue-50"
+            } border-2 ${darkMode ? "border-[#30363d] hover:border-[#60a5fa]" : "border-[#90caf9] hover:border-[#1976d2]"}`}
+              onClick={() => startMatchmaking('ai')}
+            >
+              <div className="text-7xl mb-6 text-center">🤖</div>
+              <h2 className={`text-3xl font-bold mb-4 text-center ${darkMode ? "text-[#60a5fa]" : "text-[#0d47a1]"}`}>
+                Practice with AI
+              </h2>
+              <p className={`text-center mb-6 ${darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"}`}>
+                Join a group discussion with AI assistants. Perfect for beginners who want to practice in a comfortable environment.
+              </p>
+              <div className={`space-y-3 ${darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"}`}>
+                <div className="flex items-center gap-2">
+                  <span className="text-green-500">✓</span>
+                  <span>2-4 AI participants with different personalities</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-green-500">✓</span>
+                  <span>Voice-enabled AI responses</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-green-500">✓</span>
+                  <span>Your camera will be ON</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-green-500">✓</span>
+                  <span>No pressure, practice at your pace</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Practice with Strangers */}
+            <div className={`backdrop-blur-sm rounded-3xl p-12 transition-all duration-500 hover:scale-105 cursor-pointer ${
+              darkMode ? "bg-[#161b22]/90 hover:bg-[#1e293b]" : "bg-white/90 hover:bg-blue-50"
+            } border-2 ${darkMode ? "border-[#30363d] hover:border-[#60a5fa]" : "border-[#90caf9] hover:border-[#1976d2]"}`}
+              onClick={() => startMatchmaking('strangers')}
+            >
+              <div className="text-7xl mb-6 text-center">👥</div>
+              <h2 className={`text-3xl font-bold mb-4 text-center ${darkMode ? "text-[#60a5fa]" : "text-[#0d47a1]"}`}>
+                Practice with Strangers
+              </h2>
+              <p className={`text-center mb-6 ${darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"}`}>
+                Join live group discussions with real people from across India. Real interview simulation experience.
+              </p>
+              <div className={`space-y-3 ${darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"}`}>
+                <div className="flex items-center gap-2">
+                  <span className="text-green-500">✓</span>
+                  <span>1-3 real users + AI assistants</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-green-500">✓</span>
+                  <span>Live video chat enabled</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-green-500">✓</span>
+                  <span>Everyone's camera will be ON</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-green-500">✓</span>
+                  <span>Real GD experience</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Info Box */}
+          <div className={`p-6 rounded-xl ${darkMode ? "bg-[#161b22]" : "bg-white"}`}>
+            <h3 className={`text-xl font-bold mb-3 ${darkMode ? "text-[#60a5fa]" : "text-[#0d47a1]"}`}>
+              📹 Camera & Microphone Required
+            </h3>
+            <p className={`${darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"}`}>
+              Both modes require camera and microphone access for the best experience. You can control your camera and mic during the session.
+            </p>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  // Matchmaking Screen
+  if (matchmaking) {
+    return (
+      <div className={`min-h-screen font-[Poppins] flex items-center justify-center transition-colors duration-500 ${
+        darkMode ? "bg-[#0d1117]" : "bg-gradient-to-br from-[#e3f2fd] to-[#bbdefb]"
+      }`}>
+        <div className="text-center">
+          <div className="text-8xl mb-6 animate-bounce">🔍</div>
+          <h2 className={`text-3xl font-bold mb-4 ${darkMode ? "text-[#60a5fa]" : "text-[#0d47a1]"}`}>
+            Finding Participants...
+          </h2>
+          <p className={`text-lg ${darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"}`}>
+            {selectedMode === 'ai' ? 'Connecting with AI assistants' : 'Connecting with strangers and AI'}
+          </p>
+          <div className="mt-8">
+            <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[#60a5fa]"></div>
+          </div>
+          <p className={`mt-6 ${darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"}`}>
+            📹 Setting up your camera...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // GD Session Screen with Camera
+  if (gdStarted) {
+    return (
+      <div className={`min-h-screen font-[Poppins] transition-colors duration-500 ${
+        darkMode ? "bg-[#0d1117]" : "bg-gradient-to-br from-[#e3f2fd] to-[#bbdefb]"
+      }`}>
+        <header className={`sticky top-0 z-50 backdrop-blur-lg px-8 md:px-16 py-4 flex justify-between items-center border-b transition-all duration-500 ${
+          darkMode ? "bg-[#161b22]/90 border-[#30363d]" : "bg-white/80 border-[#90caf9]"
+        }`}>
+          <h1 className={`text-2xl font-bold ${darkMode ? "text-[#60a5fa]" : "text-[#1976d2]"}`}>
+            PrepTalk GD - {selectedMode === 'ai' ? '🤖 AI Mode' : '👥 Live Mode'}
+          </h1>
+          
+          <div className="flex items-center gap-4">
+            <div className={`px-6 py-2 rounded-full font-bold text-xl ${
+              timeLeft < 120 ? "bg-red-500 text-white animate-pulse" : darkMode ? "bg-[#60a5fa] text-white" : "bg-[#1976d2] text-white"
+            }`}>
+              ⏱️ {formatTime(timeLeft)}
+            </div>
+            <button onClick={handleEndGD} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full">
+              End GD
+            </button>
+          </div>
+        </header>
+
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          {/* Topic Display */}
+          {selectedTopic && (
+            <div className={`rounded-2xl p-6 mb-6 text-center ${darkMode ? "bg-[#161b22]" : "bg-white"}`}>
+              <h2 className={`text-2xl font-bold mb-2 ${darkMode ? "text-[#60a5fa]" : "text-[#0d47a1]"}`}>
+                {selectedTopic.topic}
+              </h2>
+              <div className="flex justify-center gap-4">
+                <span className={`px-4 py-1 rounded-full text-sm ${darkMode ? "bg-[#60a5fa]/20 text-[#93c5fd]" : "bg-[#1976d2]/20 text-[#1565c0]"}`}>
+                  {selectedTopic.category}
+                </span>
+                <span className={`px-4 py-1 rounded-full text-sm ${darkMode ? "bg-[#60a5fa]/20 text-[#93c5fd]" : "bg-[#1976d2]/20 text-[#1565c0]"}`}>
+                  {selectedTopic.difficulty}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Video Grid - Left Side */}
+            <div className="lg:col-span-1">
+              <div className={`rounded-2xl p-6 ${darkMode ? "bg-[#161b22]" : "bg-white"}`}>
+                <h3 className={`text-xl font-bold mb-4 ${darkMode ? "text-[#60a5fa]" : "text-[#0d47a1]"}`}>
+                  Participants ({participants.length})
+                </h3>
+                
+                {/* Your Video */}
+                <div className="mb-4 relative">
+                  <video
+                    ref={localVideoRef}
+                    autoPlay
+                    muted
+                    playsInline
+                    className="w-full h-48 bg-black rounded-xl object-cover"
+                  />
+                  <div className="absolute bottom-2 left-2 bg-black/70 text-white px-3 py-1 rounded-full text-sm flex items-center gap-2">
+                    <span>👤</span>
+                    <span>You {currentSpeaker === 'me' && '🎤'}</span>
+                  </div>
+                  {!cameraEnabled && (
+                    <div className="absolute inset-0 bg-black/80 flex items-center justify-center rounded-xl">
+                      <div className="text-6xl">👤</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Other Participants */}
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {participants.filter(p => !p.isMe).map((participant) => (
+                    <div key={participant.id} className={`p-3 rounded-xl transition-all ${
+                      currentSpeaker === participant.id
+                        ? darkMode ? "bg-[#60a5fa]/30 border-2 border-[#60a5fa]" : "bg-[#1976d2]/30 border-2 border-[#1976d2]"
+                        : darkMode ? "bg-[#0d1117]" : "bg-[#f5f5f5]"
+                    }`}>
+                      {participant.hasVideo ? (
+                        <div className="relative">
+                          <div className="w-full h-32 bg-gray-800 rounded-lg flex items-center justify-center">
+                            <span className="text-5xl">{participant.avatar}</span>
+                          </div>
+                          <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded-full text-xs">
+                            {participant.name}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-3">
+                          <span className="text-3xl">{participant.avatar}</span>
+                          <div className="flex-1">
+                            <p className={`font-bold ${darkMode ? "text-white" : "text-[#0d47a1]"}`}>
+                              {participant.name}
+                            </p>
+                            {participant.location && (
+                              <p className={`text-xs ${darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"}`}>
+                                📍 {participant.location}
+                              </p>
+                            )}
+                          </div>
+                          {currentSpeaker === participant.id && <span className="text-xl animate-pulse">🎤</span>}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Camera Controls */}
+                <div className="mt-4 flex gap-2">
+                  <button onClick={toggleCamera} className={`flex-1 px-4 py-2 rounded-xl font-bold ${
+                    cameraEnabled ? "bg-green-500 text-white" : "bg-red-500 text-white"
+                  }`}>
+                    {cameraEnabled ? '📹 Camera On' : '📹 Camera Off'}
+                  </button>
+                  <button onClick={toggleMic} className={`flex-1 px-4 py-2 rounded-xl font-bold ${
+                    micEnabled ? "bg-green-500 text-white" : "bg-red-500 text-white"
+                  }`}>
+                    {micEnabled ? '🎤 Mic On' : '🔇 Mic Off'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Discussion Panel - Right Side */}
+            <div className={`lg:col-span-2 rounded-2xl p-6 flex flex-col ${darkMode ? "bg-[#161b22]" : "bg-white"}`}>
+              <h3 className={`text-xl font-bold mb-4 ${darkMode ? "text-[#60a5fa]" : "text-[#0d47a1]"}`}>
+                Discussion
+              </h3>
+
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto mb-4 space-y-3 max-h-96">
+                {messages.map((msg, index) => (
+                  <div key={index} className={`p-4 rounded-xl ${
+                    msg.isModerator
+                      ? darkMode ? "bg-[#60a5fa]/20 border-l-4 border-[#60a5fa]" : "bg-[#1976d2]/20 border-l-4 border-[#1976d2]"
+                      : msg.isMe
+                        ? darkMode ? "bg-green-900/30 border-l-4 border-green-500" : "bg-green-100 border-l-4 border-green-500"
+                        : darkMode ? "bg-[#0d1117]" : "bg-[#f5f5f5]"
+                  }`}>
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl">{msg.avatar}</span>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start mb-1">
+                          <p className={`font-bold ${darkMode ? "text-white" : "text-[#0d47a1]"}`}>{msg.sender}</p>
+                          <span className={`text-xs ${darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"}`}>{msg.timestamp}</span>
+                        </div>
+                        <p className={`${darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"}`}>{msg.text}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Input Area */}
+              <div className="space-y-3">
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    value={userInput}
+                    onChange={(e) => setUserInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSpeak()}
+                    placeholder="Type your response..."
+                    className={`flex-1 px-4 py-3 rounded-xl border-2 ${
+                      darkMode ? "bg-[#0d1117] border-[#30363d] text-white" : "bg-white border-gray-300"
+                    }`}
+                    disabled={speaking}
+                  />
+                  <button onClick={handleSpeak} disabled={speaking || !userInput.trim()} className={`px-6 py-3 rounded-xl font-bold ${
+                    speaking || !userInput.trim() ? "bg-gray-400" : darkMode ? "bg-[#60a5fa]" : "bg-[#1976d2]"
+                  } text-white`}>
+                    Send
+                  </button>
+                </div>
+
+                <div className="flex gap-3">
+                  <button onClick={toggleVoiceRecognition} className={`flex-1 px-4 py-3 rounded-xl font-bold ${
+                    isListening ? "bg-red-500 text-white animate-pulse" : darkMode ? "bg-[#60a5fa]/20 text-[#60a5fa]" : "bg-[#1976d2]/20 text-[#1976d2]"
+                  }`}>
+                    {isListening ? "🎤 Listening..." : "🎤 Voice Input"}
+                  </button>
+                  <button onClick={() => setVoiceEnabled(!voiceEnabled)} className={`px-6 py-3 rounded-xl font-bold ${
+                    voiceEnabled ? "bg-green-500 text-white" : "bg-gray-500 text-white"
+                  }`}>
+                    {voiceEnabled ? "🔊 Voice On" : "🔇 Voice Off"}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </footer>
+      </div>
+    );
+  }
 
-      <style>{`
-        @keyframes floatIcons {
-          from { transform: translateY(0); }
-          to { transform: translateY(20px); }
-        }
-        
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
-        @keyframes fadeInUp {
-          from { 
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to { 
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes slideDown {
-          from {
-            transform: translateY(-100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateY(0);
-            opacity: 1;
-          }
-        }
-        
-        @keyframes pulse-slow {
-          0%, 100% { transform: scale(1); opacity: 0.2; }
-          50% { transform: scale(1.05); opacity: 0.15; }
-        }
-        
-        @keyframes float {
-          0%, 100% { transform: translateY(0) translateX(0); }
-          33% { transform: translateY(-20px) translateX(10px); }
-          66% { transform: translateY(10px) translateX(-10px); }
-        }
-        
-        @keyframes bounce-slow {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-12px); }
-        }
-        
-        @keyframes scroll-fast {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-        
-        .animate-fadeIn {
-          animation: fadeIn 1s ease-out forwards;
-        }
-        
-        .animate-fadeInUp {
-          animation: fadeInUp 1s ease-out forwards;
-        }
-        
-        .animate-slideDown {
-          animation: slideDown 0.6s ease-out forwards;
-        }
-        
-        .animate-pulse-slow {
-          animation: pulse-slow 4s ease-in-out infinite;
-        }
-        
-        .animate-float {
-          animation: float 8s ease-in-out infinite;
-        }
-        
-        .animate-bounce-slow {
-          animation: bounce-slow 2s ease-in-out infinite;
-        }
-        
-        .animate-floatIcons {
-          animation: floatIcons 6s ease-in-out infinite alternate;
-        }
-        
-        .animate-scroll-fast {
-          animation: scroll-fast 15s linear infinite;
-        }
-        
-        .animation-delay-200 {
-          animation-delay: 0.2s;
-        }
-        
-        .animation-delay-400 {
-          animation-delay: 0.4s;
-        }
-        
-        .animation-delay-600 {
-          animation-delay: 0.6s;
-        }
-        
-        .animation-delay-800 {
-          animation-delay: 0.8s;
-        }
-        
-        .animation-delay-1000 {
-          animation-delay: 1s;
-        }
-      `}</style>
-    </div>
-  );
+  return null;
 }
