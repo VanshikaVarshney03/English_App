@@ -1,663 +1,199 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import { useNavigate } from 'react-router-dom';
 
-export default function GroupDiscussion() {
+export default function Dashboard() {
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(false);
-  const [selectionScreen, setSelectionScreen] = useState(true); // NEW: Selection screen
-  const [matchmaking, setMatchmaking] = useState(false);
-  const [gdStarted, setGdStarted] = useState(false);
-  const [selectedMode, setSelectedMode] = useState(null); // 'ai' or 'strangers'
-  const [selectedTopic, setSelectedTopic] = useState(null);
-  const [timeLeft, setTimeLeft] = useState(600);
-  const [participants, setParticipants] = useState([]);
-  const [messages, setMessages] = useState([]);
-  const [userInput, setUserInput] = useState('');
-  const [currentSpeaker, setCurrentSpeaker] = useState(null);
-  const [speaking, setSpeaking] = useState(false);
   
-  // Video/Camera states
-  const [localStream, setLocalStream] = useState(null);
-  const [remoteStreams, setRemoteStreams] = useState({});
-  const localVideoRef = useRef(null);
-  const [cameraEnabled, setCameraEnabled] = useState(true);
-  const [micEnabled, setMicEnabled] = useState(true);
+  // Mock user data (replace with actual auth data later)
+  const user = {
+    name: "Ishika",
+    email: "ishika@example.com",
+    avatar: "👤",
+    level: "Intermediate",
+    streak: 7,
+    points: 450
+  };
 
-  // Voice Features
-  const [isListening, setIsListening] = useState(false);
-  const [voiceEnabled, setVoiceEnabled] = useState(true);
-  const recognitionRef = useRef(null);
-  const synthesisRef = useRef(window.speechSynthesis);
-
-  const gdTopics = [
-    { id: 1, topic: "Social Media: Boon or Bane?", category: "Technology", difficulty: "Easy" },
-    { id: 2, topic: "Should College Education be Free?", category: "Education", difficulty: "Medium" },
-    { id: 3, topic: "Work From Home vs Office: Future of Work", category: "Career", difficulty: "Easy" },
-    { id: 4, topic: "Is AI a Threat to Human Jobs?", category: "Technology", difficulty: "Medium" },
-    { id: 5, topic: "Climate Change: Individual vs Government Responsibility", category: "Environment", difficulty: "Hard" },
-    { id: 6, topic: "Online Shopping vs Traditional Markets", category: "Business", difficulty: "Easy" },
-    { id: 7, topic: "Should Voting be Made Compulsory?", category: "Politics", difficulty: "Medium" },
-    { id: 8, topic: "Electric Vehicles: Solution to Pollution?", category: "Environment", difficulty: "Medium" },
-    { id: 9, topic: "Impact of OTT Platforms on Cinema", category: "Entertainment", difficulty: "Easy" },
-    { id: 10, topic: "Cryptocurrency: Future of Money?", category: "Finance", difficulty: "Hard" }
+  const stats = [
+    { label: "Current Streak", value: `${user.streak} days`, emoji: "🔥", color: "from-orange-400 to-red-500" },
+    { label: "Total Points", value: user.points, emoji: "⭐", color: "from-yellow-400 to-orange-500" },
+    { label: "Level", value: user.level, emoji: "🎯", color: "from-green-400 to-teal-500" },
+    { label: "Completed", value: "12/50", emoji: "✅", color: "from-blue-400 to-cyan-500" }
   ];
 
-  const aiParticipants = [
-    { id: 'ai1', name: "Rahul AI", avatar: "🤖", personality: "Agreeable", voiceSettings: { rate: 1.0, pitch: 1.0 } },
-    { id: 'ai2', name: "Priya AI", avatar: "🎭", personality: "Neutral", voiceSettings: { rate: 0.95, pitch: 1.2 } },
-    { id: 'ai3', name: "Amit AI", avatar: "🎪", personality: "Critical", voiceSettings: { rate: 0.9, pitch: 0.9 } },
-    { id: 'ai4', name: "Neha AI", avatar: "🎨", personality: "Supportive", voiceSettings: { rate: 1.05, pitch: 1.1 } }
+  const quickActions = [
+    { 
+      title: "Easy Level", 
+      emoji: "🌱", 
+      description: "Begin your journey",
+      route: "/easy-level",
+      color: "from-green-400 to-emerald-500"
+    },
+    { 
+      title: "Intermediate", 
+      emoji: "🚀", 
+      description: "Level up your skills",
+      route: "/intermediate-level",
+      color: "from-yellow-400 to-orange-500"
+    },
+    { 
+      title: "Hard Level", 
+      emoji: "🏆", 
+      description: "Master English",
+      route: "/hard-level",
+      color: "from-red-400 to-pink-500"
+    },
+    { 
+      title: "All Paths", 
+      emoji: "🗺️", 
+      description: "Browse all topics",
+      route: "/learning-paths",
+      color: "from-purple-400 to-indigo-500"
+    }
   ];
 
-  // Initialize Camera and Mic
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true
-      });
-      
-      setLocalStream(stream);
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
-      }
-    } catch (error) {
-      console.error('Camera access error:', error);
-      alert('Please allow camera and microphone access');
-    }
+  const recentActivity = [
+    { title: "Daily Words", lesson: "Completed 10 words", time: "2 hours ago", emoji: "📚" },
+    { title: "Grammar Practice", lesson: "Tenses Quiz - 85%", time: "Yesterday", emoji: "✍️" },
+    { title: "Challenge Mode", lesson: "AI Ethics Topic", time: "2 days ago", emoji: "🎤" }
+  ];
+
+  const handleLogout = () => {
+    // Clear auth data here
+    localStorage.removeItem('user');
+    navigate('/');
   };
 
-  // Toggle Camera
-  const toggleCamera = () => {
-    if (localStream) {
-      const videoTrack = localStream.getVideoTracks()[0];
-      videoTrack.enabled = !videoTrack.enabled;
-      setCameraEnabled(videoTrack.enabled);
-    }
-  };
-
-  // Toggle Microphone
-  const toggleMic = () => {
-    if (localStream) {
-      const audioTrack = localStream.getAudioTracks()[0];
-      audioTrack.enabled = !audioTrack.enabled;
-      setMicEnabled(audioTrack.enabled);
-    }
-  };
-
-  // Speech Recognition Setup
-  useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = 'en-IN';
-
-      recognition.onresult = (event) => {
-        const transcript = Array.from(event.results)
-          .map(result => result[0].transcript)
-          .join('');
-        setUserInput(transcript);
-      };
-
-      recognition.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
-        setIsListening(false);
-      };
-
-      recognitionRef.current = recognition;
-    }
-
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-      // Stop camera on unmount
-      if (localStream) {
-        localStream.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, []);
-
-  // Timer Logic
-  useEffect(() => {
-    if (gdStarted && timeLeft > 0) {
-      const interval = setInterval(() => {
-        setTimeLeft(prev => prev - 1);
-      }, 1000);
-      return () => clearInterval(interval);
-    } else if (timeLeft === 0) {
-      handleEndGD();
-    }
-  }, [gdStarted, timeLeft]);
-
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  // AI Voice Synthesis
-  const speakText = (text, voiceSettings = {}) => {
-    if (!voiceEnabled) return;
-    synthesisRef.current.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = voiceSettings.rate || 1.0;
-    utterance.pitch = voiceSettings.pitch || 1.0;
-    synthesisRef.current.speak(utterance);
-  };
-
-  // Start Matchmaking
-  const startMatchmaking = async (mode) => {
-    setSelectedMode(mode);
-    setSelectionScreen(false);
-    setMatchmaking(true);
-    
-    // Start camera
-    await startCamera();
-    
-    setTimeout(() => {
-      let newParticipants = [];
-      
-      if (mode === 'ai') {
-        // AI mode: 2-4 AI participants
-        const randomAI = aiParticipants
-          .sort(() => 0.5 - Math.random())
-          .slice(0, Math.floor(Math.random() * 3) + 2);
-        newParticipants = [
-          { id: 'me', name: "You", avatar: "👤", isMe: true },
-          ...randomAI
-        ];
-      } else {
-        // Strangers mode: Mix of real users and AI
-        const realStrangers = [
-          { id: 'user1', name: "Anonymous User", avatar: "👤", isReal: true, location: "Mumbai", hasVideo: true },
-          { id: 'user2', name: "Student123", avatar: "👨‍🎓", isReal: true, location: "Delhi", hasVideo: true },
-          { id: 'user3', name: "Professional_X", avatar: "👨‍💼", isReal: true, location: "Bangalore", hasVideo: true }
-        ].sort(() => 0.5 - Math.random()).slice(0, Math.floor(Math.random() * 2) + 1);
-        
-        const someAI = aiParticipants
-          .sort(() => 0.5 - Math.random())
-          .slice(0, Math.floor(Math.random() * 2) + 1);
-        
-        newParticipants = [
-          { id: 'me', name: "You", avatar: "👤", isMe: true, hasVideo: true },
-          ...realStrangers,
-          ...someAI
-        ];
-      }
-      
-      setParticipants(newParticipants);
-      
-      const randomTopic = gdTopics[Math.floor(Math.random() * gdTopics.length)];
-      setSelectedTopic(randomTopic);
-      
-      setMatchmaking(false);
-      setGdStarted(true);
-      
-      const moderatorMessage = `Welcome! Today's topic: "${randomTopic.topic}". You have 10 minutes. Let's begin!`;
-      addMessage({
-        sender: "Moderator",
-        avatar: "🎯",
-        text: moderatorMessage,
-        isModerator: true,
-        timestamp: new Date().toLocaleTimeString()
-      });
-
-      speakText(moderatorMessage);
-      setTimeout(() => startAIConversation(), 3000);
-    }, 3000);
-  };
-
-  const addMessage = (message) => {
-    setMessages(prev => [...prev, message]);
-  };
-
-  const startAIConversation = () => {
-    const aiMessages = [
-      "I believe this is a very relevant topic in today's context.",
-      "Let me present a contrasting viewpoint here.",
-      "According to recent studies, data shows significant trends.",
-      "I agree with the previous speaker, and I'd like to add my perspective.",
-      "That's an interesting point, but consider the alternative.",
-      "From a practical standpoint, implementation is key.",
-      "We need to balance both sides carefully.",
-      "Research indicates this approach has proven effective."
-    ];
-
-    const aiSpeakers = participants.filter(p => !p.isReal && !p.isMe);
-    let messageIndex = 0;
-
-    const speakInterval = setInterval(() => {
-      if (!gdStarted || timeLeft === 0) {
-        clearInterval(speakInterval);
-        return;
-      }
-
-      const speaker = aiSpeakers[messageIndex % aiSpeakers.length];
-      const message = aiMessages[Math.floor(Math.random() * aiMessages.length)];
-
-      setCurrentSpeaker(speaker.id);
-      setSpeaking(true);
-
-      if (voiceEnabled) {
-        speakText(message, speaker.voiceSettings);
-      }
-
-      setTimeout(() => {
-        addMessage({
-          sender: speaker.name,
-          avatar: speaker.avatar,
-          text: message,
-          timestamp: new Date().toLocaleTimeString(),
-          isAI: true
-        });
-        setSpeaking(false);
-        setCurrentSpeaker(null);
-      }, 2000);
-
-      messageIndex++;
-    }, 10000);
-  };
-
-  const toggleVoiceRecognition = () => {
-    if (!recognitionRef.current) {
-      alert('Speech recognition not supported');
-      return;
-    }
-
-    if (isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    } else {
-      recognitionRef.current.start();
-      setIsListening(true);
-    }
-  };
-
-  const handleSpeak = () => {
-    if (!userInput.trim()) return;
-
-    setCurrentSpeaker('me');
-    setSpeaking(true);
-
-    setTimeout(() => {
-      addMessage({
-        sender: "You",
-        avatar: "👤",
-        text: userInput,
-        timestamp: new Date().toLocaleTimeString(),
-        isMe: true
-      });
-      setUserInput('');
-      setSpeaking(false);
-      setCurrentSpeaker(null);
-    }, 1500);
-  };
-
-  const handleEndGD = () => {
-    setGdStarted(false);
-    const endMessage = "Time's up! Thank you for participating!";
-    
-    addMessage({
-      sender: "Moderator",
-      avatar: "🎯",
-      text: endMessage,
-      isModerator: true,
-      timestamp: new Date().toLocaleTimeString()
-    });
-
-    speakText(endMessage);
-    
-    if (recognitionRef.current && isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    }
-    
-    // Stop camera
-    if (localStream) {
-      localStream.getTracks().forEach(track => track.stop());
-    }
-  };
-
-  // Selection Screen (AI vs Strangers)
-  if (selectionScreen) {
-    return (
-      <div className={`min-h-screen font-[Poppins] transition-colors duration-500 ${
-        darkMode ? "bg-[#0d1117] text-white" : "bg-gradient-to-br from-[#e3f2fd] to-[#bbdefb] text-[#0d47a1]"
-      }`}>
-        <header className={`sticky top-0 z-50 backdrop-blur-lg px-8 md:px-16 py-4 flex justify-between items-center border-b transition-all duration-500 ${
-          darkMode ? "bg-[#161b22]/90 border-[#30363d]" : "bg-white/80 border-[#90caf9] shadow-[0_4px_12px_rgba(33,150,243,0.1)]"
-        }`}>
-          <h1 className={`text-2xl font-bold cursor-pointer ${darkMode ? "text-[#60a5fa]" : "text-[#1976d2]"}`} onClick={() => navigate('/dashboard')}>
-            PrepTalk
-          </h1>
+  return (
+    <div className={`min-h-screen ${darkMode ? 'bg-gradient-to-br from-[#0a0e27] to-[#1a1d3a]' : 'bg-gradient-to-br from-[#e8f5e9] via-[#e1f5fe] to-[#f3e5f5]'} transition-colors duration-500`}>
+      {/* Header */}
+      <header className={`sticky top-0 z-50 ${darkMode ? 'bg-[#0f1729]/90' : 'bg-white/80'} backdrop-blur-lg border-b ${darkMode ? 'border-[#2a3441]' : 'border-gray-200'} transition-colors duration-500`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-4 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+              EnglishMaster
+            </h1>
+          </div>
           
-          <div className="flex gap-3">
-            <button onClick={() => navigate('/dashboard')} className={`${darkMode ? "text-[#60a5fa] border-[#60a5fa]" : "text-[#1565c0] border-[#1976d2]"} border-2 px-4 py-2 rounded-full transition-all`}>
-              ← Back
-            </button>
-            <button onClick={() => setDarkMode(!darkMode)} className={`${darkMode ? "bg-[#60a5fa] hover:bg-[#3b82f6]" : "bg-[#1976d2] hover:bg-[#1565c0]"} text-white p-2.5 rounded-full transition-all`}>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setDarkMode(!darkMode)}
+              className={`${darkMode ? 'bg-[#60a5fa] hover:bg-[#3b82f6]' : 'bg-[#1976d2] hover:bg-[#1565c0]'} text-white p-2.5 rounded-full transition-all duration-300 hover:scale-110 shadow-lg`}
+            >
               {darkMode ? '☀️' : '🌙'}
             </button>
-          </div>
-        </header>
-
-        <section className="max-w-6xl mx-auto px-4 py-12">
-          <div className="text-center mb-12">
-            <div className="text-6xl mb-4">💬</div>
-            <h1 className={`text-4xl font-bold mb-4 ${darkMode ? "text-[#60a5fa]" : "text-[#0d47a1]"}`}>
-              Group Discussion Practice
-            </h1>
-            <p className={`text-lg ${darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"}`}>
-              Choose your practice mode with camera and voice enabled
-            </p>
-          </div>
-
-          {/* Mode Selection */}
-          <div className="grid md:grid-cols-2 gap-8 mb-8">
-            {/* Practice with AI */}
-            <div className={`backdrop-blur-sm rounded-3xl p-12 transition-all duration-500 hover:scale-105 cursor-pointer ${
-              darkMode ? "bg-[#161b22]/90 hover:bg-[#1e293b]" : "bg-white/90 hover:bg-blue-50"
-            } border-2 ${darkMode ? "border-[#30363d] hover:border-[#60a5fa]" : "border-[#90caf9] hover:border-[#1976d2]"}`}
-              onClick={() => startMatchmaking('ai')}
+            <button 
+              onClick={handleLogout}
+              className={`${darkMode ? 'bg-red-600 hover:bg-red-700' : 'bg-red-500 hover:bg-red-600'} text-white px-4 py-2 rounded-full font-semibold transition-all hover:scale-105`}
             >
-              <div className="text-7xl mb-6 text-center">🤖</div>
-              <h2 className={`text-3xl font-bold mb-4 text-center ${darkMode ? "text-[#60a5fa]" : "text-[#0d47a1]"}`}>
-                Practice with AI
-              </h2>
-              <p className={`text-center mb-6 ${darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"}`}>
-                Join a group discussion with AI assistants. Perfect for beginners who want to practice in a comfortable environment.
-              </p>
-              <div className={`space-y-3 ${darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"}`}>
-                <div className="flex items-center gap-2">
-                  <span className="text-green-500">✓</span>
-                  <span>2-4 AI participants with different personalities</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-green-500">✓</span>
-                  <span>Voice-enabled AI responses</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-green-500">✓</span>
-                  <span>Your camera will be ON</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-green-500">✓</span>
-                  <span>No pressure, practice at your pace</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Practice with Strangers */}
-            <div className={`backdrop-blur-sm rounded-3xl p-12 transition-all duration-500 hover:scale-105 cursor-pointer ${
-              darkMode ? "bg-[#161b22]/90 hover:bg-[#1e293b]" : "bg-white/90 hover:bg-blue-50"
-            } border-2 ${darkMode ? "border-[#30363d] hover:border-[#60a5fa]" : "border-[#90caf9] hover:border-[#1976d2]"}`}
-              onClick={() => startMatchmaking('strangers')}
-            >
-              <div className="text-7xl mb-6 text-center">👥</div>
-              <h2 className={`text-3xl font-bold mb-4 text-center ${darkMode ? "text-[#60a5fa]" : "text-[#0d47a1]"}`}>
-                Practice with Strangers
-              </h2>
-              <p className={`text-center mb-6 ${darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"}`}>
-                Join live group discussions with real people from across India. Real interview simulation experience.
-              </p>
-              <div className={`space-y-3 ${darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"}`}>
-                <div className="flex items-center gap-2">
-                  <span className="text-green-500">✓</span>
-                  <span>1-3 real users + AI assistants</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-green-500">✓</span>
-                  <span>Live video chat enabled</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-green-500">✓</span>
-                  <span>Everyone's camera will be ON</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-green-500">✓</span>
-                  <span>Real GD experience</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Info Box */}
-          <div className={`p-6 rounded-xl ${darkMode ? "bg-[#161b22]" : "bg-white"}`}>
-            <h3 className={`text-xl font-bold mb-3 ${darkMode ? "text-[#60a5fa]" : "text-[#0d47a1]"}`}>
-              📹 Camera & Microphone Required
-            </h3>
-            <p className={`${darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"}`}>
-              Both modes require camera and microphone access for the best experience. You can control your camera and mic during the session.
-            </p>
-          </div>
-        </section>
-      </div>
-    );
-  }
-
-  // Matchmaking Screen
-  if (matchmaking) {
-    return (
-      <div className={`min-h-screen font-[Poppins] flex items-center justify-center transition-colors duration-500 ${
-        darkMode ? "bg-[#0d1117]" : "bg-gradient-to-br from-[#e3f2fd] to-[#bbdefb]"
-      }`}>
-        <div className="text-center">
-          <div className="text-8xl mb-6 animate-bounce">🔍</div>
-          <h2 className={`text-3xl font-bold mb-4 ${darkMode ? "text-[#60a5fa]" : "text-[#0d47a1]"}`}>
-            Finding Participants...
-          </h2>
-          <p className={`text-lg ${darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"}`}>
-            {selectedMode === 'ai' ? 'Connecting with AI assistants' : 'Connecting with strangers and AI'}
-          </p>
-          <div className="mt-8">
-            <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[#60a5fa]"></div>
-          </div>
-          <p className={`mt-6 ${darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"}`}>
-            📹 Setting up your camera...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // GD Session Screen with Camera
-  if (gdStarted) {
-    return (
-      <div className={`min-h-screen font-[Poppins] transition-colors duration-500 ${
-        darkMode ? "bg-[#0d1117]" : "bg-gradient-to-br from-[#e3f2fd] to-[#bbdefb]"
-      }`}>
-        <header className={`sticky top-0 z-50 backdrop-blur-lg px-8 md:px-16 py-4 flex justify-between items-center border-b transition-all duration-500 ${
-          darkMode ? "bg-[#161b22]/90 border-[#30363d]" : "bg-white/80 border-[#90caf9]"
-        }`}>
-          <h1 className={`text-2xl font-bold ${darkMode ? "text-[#60a5fa]" : "text-[#1976d2]"}`}>
-            PrepTalk GD - {selectedMode === 'ai' ? '🤖 AI Mode' : '👥 Live Mode'}
-          </h1>
-          
-          <div className="flex items-center gap-4">
-            <div className={`px-6 py-2 rounded-full font-bold text-xl ${
-              timeLeft < 120 ? "bg-red-500 text-white animate-pulse" : darkMode ? "bg-[#60a5fa] text-white" : "bg-[#1976d2] text-white"
-            }`}>
-              ⏱️ {formatTime(timeLeft)}
-            </div>
-            <button onClick={handleEndGD} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full">
-              End GD
+              Logout
             </button>
           </div>
-        </header>
+        </div>
+      </header>
 
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          {/* Topic Display */}
-          {selectedTopic && (
-            <div className={`rounded-2xl p-6 mb-6 text-center ${darkMode ? "bg-[#161b22]" : "bg-white"}`}>
-              <h2 className={`text-2xl font-bold mb-2 ${darkMode ? "text-[#60a5fa]" : "text-[#0d47a1]"}`}>
-                {selectedTopic.topic}
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-8">
+        {/* Welcome Section */}
+        <div className={`${darkMode ? 'bg-[#1e293b]' : 'bg-white'} rounded-3xl p-8 shadow-xl mb-8`}>
+          <div className="flex items-center gap-6">
+            <div className="text-6xl">{user.avatar}</div>
+            <div>
+              <h2 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
+                Welcome back, {user.name}! 👋
               </h2>
-              <div className="flex justify-center gap-4">
-                <span className={`px-4 py-1 rounded-full text-sm ${darkMode ? "bg-[#60a5fa]/20 text-[#93c5fd]" : "bg-[#1976d2]/20 text-[#1565c0]"}`}>
-                  {selectedTopic.category}
-                </span>
-                <span className={`px-4 py-1 rounded-full text-sm ${darkMode ? "bg-[#60a5fa]/20 text-[#93c5fd]" : "bg-[#1976d2]/20 text-[#1565c0]"}`}>
-                  {selectedTopic.difficulty}
-                </span>
-              </div>
+              <p className={`${darkMode ? 'text-[#94a3b8]' : 'text-gray-600'} text-lg`}>
+                Ready to continue your English learning journey?
+              </p>
             </div>
-          )}
+          </div>
+        </div>
 
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Video Grid - Left Side */}
-            <div className="lg:col-span-1">
-              <div className={`rounded-2xl p-6 ${darkMode ? "bg-[#161b22]" : "bg-white"}`}>
-                <h3 className={`text-xl font-bold mb-4 ${darkMode ? "text-[#60a5fa]" : "text-[#0d47a1]"}`}>
-                  Participants ({participants.length})
-                </h3>
-                
-                {/* Your Video */}
-                <div className="mb-4 relative">
-                  <video
-                    ref={localVideoRef}
-                    autoPlay
-                    muted
-                    playsInline
-                    className="w-full h-48 bg-black rounded-xl object-cover"
-                  />
-                  <div className="absolute bottom-2 left-2 bg-black/70 text-white px-3 py-1 rounded-full text-sm flex items-center gap-2">
-                    <span>👤</span>
-                    <span>You {currentSpeaker === 'me' && '🎤'}</span>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          {stats.map((stat, idx) => (
+            <div key={idx} className={`bg-gradient-to-br ${stat.color} rounded-2xl p-6 text-white text-center`}>
+              <div className="text-4xl mb-2">{stat.emoji}</div>
+              <div className="text-2xl font-bold mb-1">{stat.value}</div>
+              <div className="text-sm opacity-90">{stat.label}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Quick Actions */}
+          <div>
+            <h3 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-4`}>
+              Quick Actions
+            </h3>
+            <div className="space-y-4">
+              {quickActions.map((action, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => navigate(action.route)}
+                  className={`w-full ${darkMode ? 'bg-[#1e293b] hover:bg-[#2d3748]' : 'bg-white hover:bg-gray-50'} rounded-2xl p-4 transition-all duration-300 hover:scale-105 hover:shadow-xl border-2 ${darkMode ? 'border-[#374151]' : 'border-gray-200'} group`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`bg-gradient-to-br ${action.color} text-4xl p-4 rounded-xl`}>
+                      {action.emoji}
+                    </div>
+                    <div className="text-left">
+                      <div className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-1`}>
+                        {action.title}
+                      </div>
+                      <div className={`text-sm ${darkMode ? 'text-[#94a3b8]' : 'text-gray-600'}`}>
+                        {action.description}
+                      </div>
+                    </div>
+                    <div className="ml-auto text-2xl opacity-0 group-hover:opacity-100 transition-opacity">
+                      →
+                    </div>
                   </div>
-                  {!cameraEnabled && (
-                    <div className="absolute inset-0 bg-black/80 flex items-center justify-center rounded-xl">
-                      <div className="text-6xl">👤</div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Other Participants */}
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {participants.filter(p => !p.isMe).map((participant) => (
-                    <div key={participant.id} className={`p-3 rounded-xl transition-all ${
-                      currentSpeaker === participant.id
-                        ? darkMode ? "bg-[#60a5fa]/30 border-2 border-[#60a5fa]" : "bg-[#1976d2]/30 border-2 border-[#1976d2]"
-                        : darkMode ? "bg-[#0d1117]" : "bg-[#f5f5f5]"
-                    }`}>
-                      {participant.hasVideo ? (
-                        <div className="relative">
-                          <div className="w-full h-32 bg-gray-800 rounded-lg flex items-center justify-center">
-                            <span className="text-5xl">{participant.avatar}</span>
-                          </div>
-                          <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded-full text-xs">
-                            {participant.name}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-3">
-                          <span className="text-3xl">{participant.avatar}</span>
-                          <div className="flex-1">
-                            <p className={`font-bold ${darkMode ? "text-white" : "text-[#0d47a1]"}`}>
-                              {participant.name}
-                            </p>
-                            {participant.location && (
-                              <p className={`text-xs ${darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"}`}>
-                                📍 {participant.location}
-                              </p>
-                            )}
-                          </div>
-                          {currentSpeaker === participant.id && <span className="text-xl animate-pulse">🎤</span>}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Camera Controls */}
-                <div className="mt-4 flex gap-2">
-                  <button onClick={toggleCamera} className={`flex-1 px-4 py-2 rounded-xl font-bold ${
-                    cameraEnabled ? "bg-green-500 text-white" : "bg-red-500 text-white"
-                  }`}>
-                    {cameraEnabled ? '📹 Camera On' : '📹 Camera Off'}
-                  </button>
-                  <button onClick={toggleMic} className={`flex-1 px-4 py-2 rounded-xl font-bold ${
-                    micEnabled ? "bg-green-500 text-white" : "bg-red-500 text-white"
-                  }`}>
-                    {micEnabled ? '🎤 Mic On' : '🔇 Mic Off'}
-                  </button>
-                </div>
-              </div>
+                </button>
+              ))}
             </div>
+          </div>
 
-            {/* Discussion Panel - Right Side */}
-            <div className={`lg:col-span-2 rounded-2xl p-6 flex flex-col ${darkMode ? "bg-[#161b22]" : "bg-white"}`}>
-              <h3 className={`text-xl font-bold mb-4 ${darkMode ? "text-[#60a5fa]" : "text-[#0d47a1]"}`}>
-                Discussion
-              </h3>
-
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto mb-4 space-y-3 max-h-96">
-                {messages.map((msg, index) => (
-                  <div key={index} className={`p-4 rounded-xl ${
-                    msg.isModerator
-                      ? darkMode ? "bg-[#60a5fa]/20 border-l-4 border-[#60a5fa]" : "bg-[#1976d2]/20 border-l-4 border-[#1976d2]"
-                      : msg.isMe
-                        ? darkMode ? "bg-green-900/30 border-l-4 border-green-500" : "bg-green-100 border-l-4 border-green-500"
-                        : darkMode ? "bg-[#0d1117]" : "bg-[#f5f5f5]"
-                  }`}>
-                    <div className="flex items-start gap-3">
-                      <span className="text-2xl">{msg.avatar}</span>
+          {/* Recent Activity */}
+          <div>
+            <h3 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-4`}>
+              Recent Activity
+            </h3>
+            <div className={`${darkMode ? 'bg-[#1e293b]' : 'bg-white'} rounded-2xl p-6 border-2 ${darkMode ? 'border-[#374151]' : 'border-gray-200'}`}>
+              <div className="space-y-4">
+                {recentActivity.map((activity, idx) => (
+                  <div key={idx} className={`pb-4 ${idx !== recentActivity.length - 1 ? 'border-b' : ''} ${darkMode ? 'border-[#374151]' : 'border-gray-200'}`}>
+                    <div className="flex items-start gap-4">
+                      <div className="text-3xl">{activity.emoji}</div>
                       <div className="flex-1">
-                        <div className="flex justify-between items-start mb-1">
-                          <p className={`font-bold ${darkMode ? "text-white" : "text-[#0d47a1]"}`}>{msg.sender}</p>
-                          <span className={`text-xs ${darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"}`}>{msg.timestamp}</span>
+                        <div className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                          {activity.title}
                         </div>
-                        <p className={`${darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"}`}>{msg.text}</p>
+                        <div className={`text-sm ${darkMode ? 'text-[#94a3b8]' : 'text-gray-600'}`}>
+                          {activity.lesson}
+                        </div>
+                        <div className={`text-xs ${darkMode ? 'text-[#60a5fa]' : 'text-blue-600'} mt-1`}>
+                          {activity.time}
+                        </div>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
+            </div>
 
-              {/* Input Area */}
-              <div className="space-y-3">
-                <div className="flex gap-3">
-                  <input
-                    type="text"
-                    value={userInput}
-                    onChange={(e) => setUserInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSpeak()}
-                    placeholder="Type your response..."
-                    className={`flex-1 px-4 py-3 rounded-xl border-2 ${
-                      darkMode ? "bg-[#0d1117] border-[#30363d] text-white" : "bg-white border-gray-300"
-                    }`}
-                    disabled={speaking}
-                  />
-                  <button onClick={handleSpeak} disabled={speaking || !userInput.trim()} className={`px-6 py-3 rounded-xl font-bold ${
-                    speaking || !userInput.trim() ? "bg-gray-400" : darkMode ? "bg-[#60a5fa]" : "bg-[#1976d2]"
-                  } text-white`}>
-                    Send
-                  </button>
-                </div>
-
-                <div className="flex gap-3">
-                  <button onClick={toggleVoiceRecognition} className={`flex-1 px-4 py-3 rounded-xl font-bold ${
-                    isListening ? "bg-red-500 text-white animate-pulse" : darkMode ? "bg-[#60a5fa]/20 text-[#60a5fa]" : "bg-[#1976d2]/20 text-[#1976d2]"
-                  }`}>
-                    {isListening ? "🎤 Listening..." : "🎤 Voice Input"}
-                  </button>
-                  <button onClick={() => setVoiceEnabled(!voiceEnabled)} className={`px-6 py-3 rounded-xl font-bold ${
-                    voiceEnabled ? "bg-green-500 text-white" : "bg-gray-500 text-white"
-                  }`}>
-                    {voiceEnabled ? "🔊 Voice On" : "🔇 Voice Off"}
-                  </button>
-                </div>
+            {/* Daily Motivation */}
+            <div className={`mt-6 ${darkMode ? 'bg-gradient-to-br from-purple-600 to-indigo-700' : 'bg-gradient-to-br from-purple-500 to-indigo-600'} rounded-2xl p-6 text-white`}>
+              <div className="text-4xl mb-3">💪</div>
+              <div className="text-xl font-bold mb-2">Keep Going!</div>
+              <div className="text-sm opacity-90">
+                "The only way to learn a language is to practice speaking it as often as possible."
               </div>
             </div>
           </div>
         </div>
       </div>
-    );
-  }
-
-  return null;
+    </div>
+  );
 }
