@@ -190,7 +190,7 @@ const navigate = useNavigate();
 
     {/* Other Feature Cards (No onClick) */}
     {[
-      { icon: "✍️", title: "Grammar Lessons", desc: "Interactive lessons with examples, quizzes, and instant feedback" },
+      { icon: "✍️", title: "Grammar Lessons", desc: "Interactive lessons with examples, quizzes, and instant feedback",link:"/grammar"},
       { icon: "📖", title: "Vocabulary Builder", desc: "Daily words with pronunciation, meaning, and real-world usage examples",link:"/vocabulary" },
       { icon: "🎤", title: "Pronunciation Practice", desc: "AI-powered speech recognition checks your accent accuracy instantly" },
       { icon: "🎧", title: "Listening Practice", desc: "Audio clips, podcasts, and dialogues with comprehension questions" },
@@ -205,10 +205,11 @@ const navigate = useNavigate();
         <div className="text-3xl sm:text-4xl mb-3 group-hover:scale-125 transition-transform duration-300">{feature.icon}</div>
         <h3 className={`text-base sm:text-lg font-bold mb-2 ${darkMode ? 'text-[#e0e7ff]' : 'text-[#0d47a1]'}`}>{feature.title}</h3>
         <p className={`${darkMode ? 'text-[#94a3b8]' : 'text-[#1565c0]'} text-xs sm:text-sm leading-relaxed`}>{feature.desc}</p>
-      
-    {/* 🟢 Footer clickable if link exists */}
-    {feature.link && (
+{/*       
+    🟢 Footer clickable if link exists */}
+    {/* {feature.link && (
       <div
+
         onClick={() => navigate(feature.link)}
         className={`mt-3 text-sm font-semibold ${
           darkMode ? 'text-[#60a5fa]' : 'text-[#1976d2]'
@@ -216,8 +217,11 @@ const navigate = useNavigate();
       >
         Explore Path →
       </div>
-      )}
+      )} */}
+      {feature.link && <div onClick={() => navigate(feature.link)} className={`mt-3 font-semibold ${darkMode ? 'text-[#60a5fa]' : 'text-[#1976d2]'} hover:underline cursor-pointer`}>Explore Path →</div>}
         
+
+
       </div>
       
     ))}

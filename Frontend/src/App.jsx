@@ -20,6 +20,7 @@ import PublicSpeaking from './Pages/PublicSpeaking.jsx';
 import ProfessionalWriting from './Pages/ProfessionalWriting.jsx';
 import AccentTraining from './Pages/AccentTraining.jsx';
 import ProChallenge from './Pages/ProChallenge.jsx';
+import GrammarLessons from './Pages/GrammarLessons.jsx';
 
 function App() {
   return (
@@ -45,6 +46,7 @@ function App() {
         <Route path="/professional-writing" element={<ProfessionalWriting />} />  
         <Route path="/accent-training" element={<AccentTraining />} />
         <Route path="/pro-challenge" element={<ProChallenge />} />
+        <Route path="/grammar" element={<GrammarLessons />} />
       </Routes>
     </BrowserRouter>
   );
