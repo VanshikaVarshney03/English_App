@@ -1,199 +1,255 @@
-import React, { useState } from "react";
-import { useNavigate } from 'react-router-dom';
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
-export default function Dashboard() {
-  const navigate = useNavigate();
+export default function LoginPage() {
+  const [rollNo, setRollNo] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [darkMode, setDarkMode] = useState(false);
-  
-  // Mock user data (replace with actual auth data later)
-  const user = {
-    name: "Ishika",
-    email: "ishika@example.com",
-    avatar: "👤",
-    level: "Intermediate",
-    streak: 7,
-    points: 450
-  };
+  const navigate = useNavigate();  // ✅ Added for navigation
 
-  const stats = [
-    { label: "Current Streak", value: `${user.streak} days`, emoji: "🔥", color: "from-orange-400 to-red-500" },
-    { label: "Total Points", value: user.points, emoji: "⭐", color: "from-yellow-400 to-orange-500" },
-    { label: "Level", value: user.level, emoji: "🎯", color: "from-green-400 to-teal-500" },
-    { label: "Completed", value: "12/50", emoji: "✅", color: "from-blue-400 to-cyan-500" }
-  ];
+  const handleSubmit = (e) => {
+    e.preventDefault();
 
-  const quickActions = [
-    { 
-      title: "Easy Level", 
-      emoji: "🌱", 
-      description: "Begin your journey",
-      route: "/easy-level",
-      color: "from-green-400 to-emerald-500"
-    },
-    { 
-      title: "Intermediate", 
-      emoji: "🚀", 
-      description: "Level up your skills",
-      route: "/intermediate-level",
-      color: "from-yellow-400 to-orange-500"
-    },
-    { 
-      title: "Hard Level", 
-      emoji: "🏆", 
-      description: "Master English",
-      route: "/hard-level",
-      color: "from-red-400 to-pink-500"
-    },
-    { 
-      title: "All Paths", 
-      emoji: "🗺️", 
-      description: "Browse all topics",
-      route: "/learning-paths",
-      color: "from-purple-400 to-indigo-500"
+    // Email validation
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      setError("Please enter a valid email address.");
+      return;
     }
-  ];
 
-  const recentActivity = [
-    { title: "Daily Words", lesson: "Completed 10 words", time: "2 hours ago", emoji: "📚" },
-    { title: "Grammar Practice", lesson: "Tenses Quiz - 85%", time: "Yesterday", emoji: "✍️" },
-    { title: "Challenge Mode", lesson: "AI Ethics Topic", time: "2 days ago", emoji: "🎤" }
-  ];
+    // Password validation (same as signup)
+    const passwordRegex =
+      /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]).{8,}$/;
 
-  const handleLogout = () => {
-    // Clear auth data here
-    localStorage.removeItem('user');
-    navigate('/');
+    if (!passwordRegex.test(password)) {
+      setError(
+        "Password must have at least 8 characters, 1 uppercase letter, 1 number, and 1 special character."
+      );
+      return;
+    }
+
+    setError("");
+    
+    // ✅ Save user data to localStorage
+    localStorage.setItem('user', JSON.stringify({
+      rollNo: rollNo || "Guest",
+      email: email
+    }));
+    
+    console.log({ rollNo, email, password });
+    
+    // ✅ Redirect to dashboard after successful login
+    navigate("/dashboard");
   };
 
   return (
-    <div className={`min-h-screen ${darkMode ? 'bg-gradient-to-br from-[#0a0e27] to-[#1a1d3a]' : 'bg-gradient-to-br from-[#e8f5e9] via-[#e1f5fe] to-[#f3e5f5]'} transition-colors duration-500`}>
-      {/* Header */}
-      <header className={`sticky top-0 z-50 ${darkMode ? 'bg-[#0f1729]/90' : 'bg-white/80'} backdrop-blur-lg border-b ${darkMode ? 'border-[#2a3441]' : 'border-gray-200'} transition-colors duration-500`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-              EnglishMaster
-            </h1>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setDarkMode(!darkMode)}
-              className={`${darkMode ? 'bg-[#60a5fa] hover:bg-[#3b82f6]' : 'bg-[#1976d2] hover:bg-[#1565c0]'} text-white p-2.5 rounded-full transition-all duration-300 hover:scale-110 shadow-lg`}
-            >
-              {darkMode ? '☀️' : '🌙'}
-            </button>
-            <button 
-              onClick={handleLogout}
-              className={`${darkMode ? 'bg-red-600 hover:bg-red-700' : 'bg-red-500 hover:bg-red-600'} text-white px-4 py-2 rounded-full font-semibold transition-all hover:scale-105`}
-            >
-              Logout
-            </button>
-          </div>
+    <div
+      className={`min-h-screen font-[Poppins] transition-colors duration-500 ${
+        darkMode
+          ? "bg-[#0d1117] text-white"
+          : "bg-gradient-to-br from-[#e3f2fd] to-[#bbdefb] text-[#0d47a1]"
+      }`}
+    >
+      {/* Navbar */}
+      <header
+        className={`fixed top-0 w-full backdrop-blur-lg px-8 md:px-16 py-4 flex justify-between items-center z-50 border-b transition-all duration-500 ${
+          darkMode
+            ? "bg-[#161b22]/90 border-[#30363d]"
+            : "bg-white/80 border-[#90caf9] shadow-[0_4px_12px_rgba(33,150,243,0.1)]"
+        }`}
+      >
+        <h1
+          className={`text-2xl font-bold cursor-pointer ${
+            darkMode ? "text-[#60a5fa]" : "text-[#1976d2]"
+          }`}
+          onClick={() => navigate('/')}  // ✅ Added click handler
+        >
+          PrepTalk
+        </h1>
+
+        <div className="flex items-center gap-3">
+          {/* Signup Button */}
+          <button
+            onClick={() => navigate('/signup')}  // ✅ Changed to navigate
+            className={`${
+              darkMode
+                ? "text-[#60a5fa] border-[#60a5fa] hover:bg-[#1e293b]"
+                : "text-[#1565c0] border-[#1976d2] hover:bg-[#e3f2fd]"
+            } border-2 px-5 py-2 rounded-full transition-all duration-300 font-medium`}
+          >
+            Signup
+          </button>
+
+          {/* Contact Button */}
+          <button
+            className={`${
+              darkMode
+                ? "text-[#60a5fa] border-[#60a5fa] hover:bg-[#1e293b]"
+                : "text-[#1565c0] border-[#1976d2] hover:bg-[#e3f2fd]"
+            } border-2 px-5 py-2 rounded-full transition-all duration-300 font-medium`}
+          >
+            Contact Us
+          </button>
+
+          {/* Dark Mode Toggle */}
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            className={`${
+              darkMode
+                ? "bg-[#60a5fa] hover:bg-[#3b82f6]"
+                : "bg-[#1976d2] hover:bg-[#1565c0]"
+            } text-white p-2 sm:p-2.5 rounded-full transition-all duration-300 hover:scale-110 shadow-lg`}
+            aria-label="Toggle Dark Mode"
+          >
+            {darkMode ? "☀️" : "🌙"}
+          </button>
         </div>
       </header>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-8">
-        {/* Welcome Section */}
-        <div className={`${darkMode ? 'bg-[#1e293b]' : 'bg-white'} rounded-3xl p-8 shadow-xl mb-8`}>
-          <div className="flex items-center gap-6">
-            <div className="text-6xl">{user.avatar}</div>
+      {/* Login Form */}
+      <section className="flex flex-col justify-center items-center min-h-screen px-4 md:px-20 pt-32">
+        <div
+          className={`backdrop-blur-sm p-10 rounded-3xl shadow-lg max-w-md w-full transition-all duration-500 ${
+            darkMode ? "bg-[#161b22]/90" : "bg-white/90"
+          }`}
+        >
+          <h2
+            className={`text-3xl font-bold mb-6 text-center ${
+              darkMode ? "text-[#60a5fa]" : "text-[#0d47a1]"
+            }`}
+          >
+            Login
+          </h2>
+
+          <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
+            {/* Optional Roll Number */}
             <div>
-              <h2 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
-                Welcome back, {user.name}! 👋
-              </h2>
-              <p className={`${darkMode ? 'text-[#94a3b8]' : 'text-gray-600'} text-lg`}>
-                Ready to continue your English learning journey?
+              <label
+                className={`block font-medium mb-1 ${
+                  darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"
+                }`}
+                htmlFor="rollNo"
+              >
+                University Roll No (Optional)
+              </label>
+              <input
+                id="rollNo"
+                type="text"
+                value={rollNo}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (/^\d*$/.test(val)) setRollNo(val);
+                }}
+                placeholder="Enter roll number (optional)"
+                className={`w-full rounded-xl px-4 py-2 focus:outline-none focus:ring-2 transition-all duration-300 ${
+                  darkMode
+                    ? "bg-[#0d1117] border border-[#30363d] focus:ring-[#60a5fa] text-white"
+                    : "border border-[#90caf9] focus:ring-[#1976d2] text-[#0d47a1]"
+                }`}
+              />
+            </div>
+
+            {/* Email Field */}
+            <div>
+              <label
+                className={`block font-medium mb-1 ${
+                  darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"
+                }`}
+                htmlFor="email"
+              >
+                University Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                className={`w-full rounded-xl px-4 py-2 focus:outline-none focus:ring-2 transition-all duration-300 ${
+                  darkMode
+                    ? "bg-[#0d1117] border border-[#30363d] focus:ring-[#60a5fa] text-white"
+                    : "border border-[#90caf9] focus:ring-[#1976d2] text-[#0d47a1]"
+                }`}
+                required
+              />
+            </div>
+
+            {/* Password Field */}
+            <div>
+              <label
+                className={`block font-medium mb-1 ${
+                  darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"
+                }`}
+                htmlFor="password"
+              >
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                className={`w-full rounded-xl px-4 py-2 focus:outline-none focus:ring-2 transition-all duration-300 ${
+                  darkMode
+                    ? "bg-[#0d1117] border border-[#30363d] focus:ring-[#60a5fa] text-white"
+                    : "border border-[#90caf9] focus:ring-[#1976d2] text-[#0d47a1]"
+                }`}
+                required
+              />
+              <p className={`text-xs mt-1 ${darkMode ? 'text-[#93c5fd]' : 'text-[#1565c0]'}`}>
+                Must include uppercase, number, special character (min 8 chars)
               </p>
             </div>
-          </div>
+
+            {/* Error Message */}
+            {error && (
+              <p className="text-red-500 text-sm text-center -mt-2">{error}</p>
+            )}
+
+            {/* Login Button */}
+            <button
+              type="submit"
+              className={`px-6 py-3 rounded-full text-lg font-semibold shadow-lg transition-all duration-500 hover:shadow-xl hover:-translate-y-1 hover:scale-105 ${
+                darkMode
+                  ? "bg-[#60a5fa] hover:bg-[#3b82f6] text-white"
+                  : "bg-gradient-to-r from-[#1976d2] to-[#1565c0] text-white hover:from-[#1565c0] hover:to-[#0d47a1]"
+              }`}
+            >
+              Login
+            </button>
+
+            {/* Signup Redirect */}
+            <p
+              className={`text-center mt-2 text-sm ${
+                darkMode ? "text-[#93c5fd]" : "text-[#1565c0]"
+              }`}
+            >
+              Not registered yet?{" "}
+              <Link
+                to="/signup"
+                className={`font-semibold hover:underline ${
+                  darkMode ? "text-[#60a5fa]" : "text-[#1976d2]"
+                }`}
+              >
+                Sign up here
+              </Link>
+            </p>
+          </form>
         </div>
+      </section>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {stats.map((stat, idx) => (
-            <div key={idx} className={`bg-gradient-to-br ${stat.color} rounded-2xl p-6 text-white text-center`}>
-              <div className="text-4xl mb-2">{stat.emoji}</div>
-              <div className="text-2xl font-bold mb-1">{stat.value}</div>
-              <div className="text-sm opacity-90">{stat.label}</div>
-            </div>
-          ))}
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Quick Actions */}
-          <div>
-            <h3 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-4`}>
-              Quick Actions
-            </h3>
-            <div className="space-y-4">
-              {quickActions.map((action, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => navigate(action.route)}
-                  className={`w-full ${darkMode ? 'bg-[#1e293b] hover:bg-[#2d3748]' : 'bg-white hover:bg-gray-50'} rounded-2xl p-4 transition-all duration-300 hover:scale-105 hover:shadow-xl border-2 ${darkMode ? 'border-[#374151]' : 'border-gray-200'} group`}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className={`bg-gradient-to-br ${action.color} text-4xl p-4 rounded-xl`}>
-                      {action.emoji}
-                    </div>
-                    <div className="text-left">
-                      <div className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-1`}>
-                        {action.title}
-                      </div>
-                      <div className={`text-sm ${darkMode ? 'text-[#94a3b8]' : 'text-gray-600'}`}>
-                        {action.description}
-                      </div>
-                    </div>
-                    <div className="ml-auto text-2xl opacity-0 group-hover:opacity-100 transition-opacity">
-                      →
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Recent Activity */}
-          <div>
-            <h3 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-4`}>
-              Recent Activity
-            </h3>
-            <div className={`${darkMode ? 'bg-[#1e293b]' : 'bg-white'} rounded-2xl p-6 border-2 ${darkMode ? 'border-[#374151]' : 'border-gray-200'}`}>
-              <div className="space-y-4">
-                {recentActivity.map((activity, idx) => (
-                  <div key={idx} className={`pb-4 ${idx !== recentActivity.length - 1 ? 'border-b' : ''} ${darkMode ? 'border-[#374151]' : 'border-gray-200'}`}>
-                    <div className="flex items-start gap-4">
-                      <div className="text-3xl">{activity.emoji}</div>
-                      <div className="flex-1">
-                        <div className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                          {activity.title}
-                        </div>
-                        <div className={`text-sm ${darkMode ? 'text-[#94a3b8]' : 'text-gray-600'}`}>
-                          {activity.lesson}
-                        </div>
-                        <div className={`text-xs ${darkMode ? 'text-[#60a5fa]' : 'text-blue-600'} mt-1`}>
-                          {activity.time}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Daily Motivation */}
-            <div className={`mt-6 ${darkMode ? 'bg-gradient-to-br from-purple-600 to-indigo-700' : 'bg-gradient-to-br from-purple-500 to-indigo-600'} rounded-2xl p-6 text-white`}>
-              <div className="text-4xl mb-3">💪</div>
-              <div className="text-xl font-bold mb-2">Keep Going!</div>
-              <div className="text-sm opacity-90">
-                "The only way to learn a language is to practice speaking it as often as possible."
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Footer */}
+      <footer
+        className={`text-center py-6 text-white/90 border-t transition-all duration-500 ${
+          darkMode
+            ? "bg-[#161b22] border-[#30363d]"
+            : "bg-gradient-to-r from-[#1976d2] to-[#1565c0] border-[#42a5f5]"
+        }`}
+      >
+        <p className="text-base">© 2025 PrepTalk. All Rights Reserved.</p>
+      </footer>
     </div>
   );
 }
