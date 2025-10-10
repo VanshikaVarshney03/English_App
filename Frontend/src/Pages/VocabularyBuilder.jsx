@@ -7,25 +7,33 @@ export default function VocabularyBuilder() {
   const [loadingNews, setLoadingNews] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("Educational");
 
-  // Fetch Word of the Day
+  const NEWS_API_KEY = "5b42f72a2bf94e7690f9e1f5fc41fb87";
+
+  // ✅ Fetch Word of the Day
   useEffect(() => {
     const fetchWord = async () => {
       try {
+        setLoadingWord(true);
         const res = await fetch("https://random-word-api.herokuapp.com/word?number=1");
         const [randomWord] = await res.json();
 
-        const meaningRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${randomWord}`);
+        const meaningRes = await fetch(
+          `https://api.dictionaryapi.dev/api/v2/entries/en/${randomWord}`
+        );
         const data = await meaningRes.json();
-
         const wordData = data[0];
+
         setWord({
           text: wordData.word,
-          meaning: wordData.meanings[0]?.definitions[0]?.definition || "Meaning not found.",
-          example: wordData.meanings[0]?.definitions[0]?.example || "No example available.",
+          meaning:
+            wordData.meanings[0]?.definitions[0]?.definition || "Meaning not found.",
+          example:
+            wordData.meanings[0]?.definitions[0]?.example || "No example available.",
           partOfSpeech: wordData.meanings[0]?.partOfSpeech || "unknown",
         });
       } catch (error) {
         console.error("Error fetching word:", error);
+        setWord(null);
       } finally {
         setLoadingWord(false);
       }
@@ -33,47 +41,51 @@ export default function VocabularyBuilder() {
     fetchWord();
   }, []);
 
-  // Dummy News Data (category-wise)
-  const allNews = {
-    International: [
-      "Global leaders meet to discuss climate policy in 2025",
-      "UN launches new peace initiative in Asia",
-      "International trade expected to rise next quarter",
-    ],
-    Sports: [
-      "India wins the World Cup 2025!",
-      "Olympic qualifiers: record-breaking performances this year",
-      "Top 5 football clubs dominating 2025 season",
-    ],
-    Political: [
-      "Government announces new education reforms",
-      "Election results spark national discussions",
-      "New policy aims to improve rural development",
-    ],
-    Educational: [
-      "Top 10 ways to learn English faster",
-      "Universities introduce AI-based learning modules",
-      "Students excel with online interactive classrooms",
-    ],
-    Entertainment: [
-      "New Hollywood releases breaking box office records",
-      "Music festivals bring fans together worldwide",
-      "Streaming platforms dominate entertainment trends",
-    ],
-    Technical: [
-      "AI tools changing the face of modern education",
-      "Tech companies announce breakthroughs in robotics",
-      "Quantum computing becomes mainstream in 2025",
-    ],
-  };
-
-  // Load initial category news
+  // ✅ Fetch News from NewsAPI directly
   useEffect(() => {
-    setLoadingNews(true);
-    setTimeout(() => {
-      setNews(allNews[selectedCategory] || []);
-      setLoadingNews(false);
-    }, 500);
+    const fetchNews = async () => {
+      try {
+        setLoadingNews(true);
+
+        // Convert category to NewsAPI categories
+        const categoryMap = {
+          International: "general",
+          Sports: "sports",
+          Political: "general",
+          Educational: "education",
+          Entertainment: "entertainment",
+          Technical: "technology",
+        };
+
+        const categoryParam = categoryMap[selectedCategory] || "general";
+
+        const res = await fetch(
+          `https://newsapi.org/v2/top-headlines?category=${categoryParam}&language=en&pageSize=5&apiKey=${NEWS_API_KEY}`
+        );
+        const data = await res.json();
+
+        if (data.status === "ok") {
+          const headlines = data.articles.map((article) => ({
+            title: article.title,
+            description: article.description,
+            url: article.url,
+            source: article.source.name,
+            image: article.urlToImage,
+            publishedAt: article.publishedAt,
+          }));
+          setNews(headlines);
+        } else {
+          console.error("Error fetching news:", data);
+          setNews([]);
+        }
+      } catch (error) {
+        console.error("Error fetching news:", error);
+        setNews([]);
+      } finally {
+        setLoadingNews(false);
+      }
+    };
+    fetchNews();
   }, [selectedCategory]);
 
   return (
@@ -84,22 +96,16 @@ export default function VocabularyBuilder() {
           📚 Vocabulary Builder
         </h1>
 
-        {/* Word of the Day Section */}
+        {/* Word of the Day */}
         <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg border border-blue-200 mb-10">
-          <h2 className="text-2xl font-semibold text-blue-700 mb-3">
-            🌟 Word of the Day
-          </h2>
+          <h2 className="text-2xl font-semibold text-blue-700 mb-3">🌟 Word of the Day</h2>
 
           {loadingWord ? (
             <p className="text-blue-600 italic">Fetching today’s word...</p>
           ) : word ? (
             <div>
-              <p className="text-3xl font-bold text-blue-900 capitalize">
-                {word.text}
-              </p>
-              <p className="text-blue-700 italic mb-2">
-                ({word.partOfSpeech})
-              </p>
+              <p className="text-3xl font-bold text-blue-900 capitalize">{word.text}</p>
+              <p className="text-blue-700 italic mb-2">({word.partOfSpeech})</p>
               <p className="text-gray-800 mb-2">
                 <strong>Meaning:</strong> {word.meaning}
               </p>
@@ -112,14 +118,11 @@ export default function VocabularyBuilder() {
           )}
         </div>
 
-        {/* News Feed Section */}
+        {/* News Feed */}
         <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg border border-blue-200">
-          {/* News Feed Heading */}
-          <h2 className="text-2xl font-semibold text-blue-700 mb-4">
-            🗞 News Feed
-          </h2>
+          <h2 className="text-2xl font-semibold text-blue-700 mb-4">🗞 News Feed</h2>
 
-          {/* News Category Selector */}
+          {/* Categories */}
           <div className="flex flex-wrap justify-center gap-3 mb-6">
             {[
               "International",
@@ -147,13 +150,17 @@ export default function VocabularyBuilder() {
           {loadingNews ? (
             <p className="text-blue-600 italic">Loading news...</p>
           ) : news.length > 0 ? (
-            <ul className="space-y-3">
-              {news.map((headline, idx) => (
+            <ul className="space-y-4">
+              {news.map((n, idx) => (
                 <li
                   key={idx}
                   className="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-all cursor-pointer"
                 >
-                  {headline}
+                  <a href={n.url} target="_blank" rel="noopener noreferrer">
+                    <h3 className="text-lg font-semibold text-blue-800">{n.title}</h3>
+                    <p className="text-gray-700 text-sm mt-1">{n.description}</p>
+                    <p className="text-gray-500 text-xs mt-2">Source: {n.source}</p>
+                  </a>
                 </li>
               ))}
             </ul>
